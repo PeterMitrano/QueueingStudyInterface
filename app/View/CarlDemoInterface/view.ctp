@@ -37,7 +37,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 			</header>
 			<div class="row">
 				<section class="7u">
-					<?php echo $this->Rms->ros3d('#274F2C'); ?>
+					<?php echo $this->Rms->ros3d('#50817b'); ?>
 				</section>
 				<section class="5u stream">
 					<?php
@@ -67,7 +67,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 		new ROS3D.SceneNode({
 			object : new ROS3D.Grid({cellSize:0.75, size:20, color:'#2B0000'}),
 			tfClient : _TF,
-			frameID : '/base_footprint'
+			frameID : '/map'
 		})
 	);
 </script>
@@ -84,3 +84,58 @@ echo $this->Rms->interactiveMarker(
 	$environment['Im'][0]['topic'], $environment['Im'][0]['Collada']['id'], $environment['Im'][0]['Resource']['url']
 );
 ?>
+
+<script>
+	// add camera controls
+	var headControl = new ROSLIB.Topic({
+		ros : _ROS,
+		name : 'asus_controller/tilt',
+		messageType : 'std_msgs/Float64'
+	});
+	var frontControl = new ROSLIB.Topic({
+		ros : _ROS,
+		name : 'creative_controller/pan',
+		messageType : 'std_msgs/Float64'
+	});
+
+	 var handleKey = function(keyCode, keyDown) {
+		var pan = 0;
+		var tilt = 0;
+
+		// check which key was pressed
+		switch (keyCode) {
+			case 38:
+				// up
+				tilt = (keyDown) ? -10 : 0;
+				break;
+			case 40:
+				// down
+				tilt = (keyDown) ? 10 : 0;
+				break;
+			case 37:
+				// left
+				pan = (keyDown) ? 10 : 0;
+				break;
+			case 39:
+				// right
+				pan = (keyDown) ? -10 : 0;
+				break;
+		}
+
+		// publish the commands
+		headControl.publish(new ROSLIB.Message({data:tilt}));
+		frontControl.publish(new ROSLIB.Message({data:pan}));
+	}
+
+	var body = document.getElementsByTagName('body')[0];
+	body.addEventListener('keydown', function(e) {
+		// arrow keys
+		if([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+			e.preventDefault();
+		}
+		handleKey(e.keyCode, true);
+	}, false);
+	body.addEventListener('keyup', function(e) {
+		handleKey(e.keyCode, false);
+	}, false);
+</script>
