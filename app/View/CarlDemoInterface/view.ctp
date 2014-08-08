@@ -32,23 +32,37 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 <section class="wrapper style4 container">
 	<div class="content center">
 		<section>
-			<header>
-				<p>Use the <strong>W, A, S, D</strong> keys to drive your robot.</p>
-			</header>
 			<div class="row">
-				<section class="7u">
-					<?php echo $this->Rms->ros3d('#50817b'); ?>
+				<section class="6u">
+					<?php echo $this->Rms->ros3d('#50817b', 0.66, 0.75); ?>
 				</section>
-				<section class="5u stream">
+				<section class="6u stream">
 					<?php
-						$topics = array();
-						foreach ($environment['Stream'] as $stream) {
-							$topics[] = $stream['topic'];
-						}
-						echo $this->Rms->mjpegPanel(
-							$environment['Mjpeg']['host'], $environment['Mjpeg']['port'], $topics
+						echo $this->Rms->mjpegStream(
+							$environment['Mjpeg']['host'],
+							$environment['Mjpeg']['port'],
+							$environment['Stream'][0]['topic'],
+							$environment['Stream'][0]
 						);
 					?>
+				</section>
+				<section class="4u">
+					<?php echo $this->Rms->ros2d('#00817b'); ?>
+				</section>
+				<section class="2u">
+					<br />
+					<a href="#" class="button small special" id="ready">Ready Arm</a>
+					<br />
+					<br />
+					<a  href="#" class="button small special" id="retract">Retract Arm</a>
+				</section>
+				<section class="6u">
+					<br />
+					Use the <strong>W, A, S, D</strong> keys to drive the robot. Use the <strong>arrow keys</strong> to
+					move the camera. Click on the map to <strong>autonomously drive</strong> the robot. Use the
+					<strong>3D interface</strong> to control the arm. Right clicking the gripper will provide additional
+					actions.
+					<br />
 				</section>
 			</div>
 		</section>
@@ -56,9 +70,43 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 </section>
 
 <script>
+	var armClient = new ROSLIB.ActionClient({
+		ros : _ROS,
+		serverName : 'jaco_arm/home_arm',
+		actionName : 'wpi_jaco_msgs/HomeArmAction'
+	});
+
+	document.getElementById('ready').onclick=function() {
+		var goal = new ROSLIB.Goal({
+			actionClient : armClient,
+			goalMessage : {
+				retract : false
+			}
+		});
+		goal.send();
+	};
+	document.getElementById('retract').onclick=function() {
+		var goal = new ROSLIB.Goal({
+			actionClient : armClient,
+			goalMessage : {
+				retract : true,
+				retractPosition : {
+					position : true,
+					armCommand : true,
+					fingerCommand : false,
+					repeat : false,
+					joints : [-2.57, 1.39, 0.377, -.084, .515, -1.745]
+				}
+			}
+		});
+		goal.send();
+	};
+</script>
+
+<script>
 	_VIEWER.camera.position.x = 1.8;
 	_VIEWER.camera.position.y = 1.0;
-	_VIEWER.camera.position.z = 2.0;
+	_VIEWER.camera.position.z = 3.0;
 	_VIEWER.camera.rotation.x = -0.65;
 	_VIEWER.camera.rotation.y = 0.82;
 	_VIEWER.camera.rotation.z = 2.38;
@@ -84,6 +132,17 @@ echo $this->Rms->interactiveMarker(
 	$environment['Im'][0]['topic'], $environment['Im'][0]['Collada']['id'], $environment['Im'][0]['Resource']['url']
 );
 ?>
+
+<script>
+new NAV2D.ImageMapClientNav({
+	ros : _ROS,
+	rootObject : _VIEWER2D.scene,
+	viewer : _VIEWER2D,
+	serverName : '/move_base',
+	image : '/img/CarlDemoInterface/CarlSpace.png',
+	withOrientation : true
+});
+</script>
 
 <script>
 	// add camera controls
