@@ -95,7 +95,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 					armCommand : true,
 					fingerCommand : false,
 					repeat : false,
-					joints : [-2.57, 1.39, 0.377, -.084, .515, -1.745]
+					joints : [-2.57, 1.39, 0.527, -.084, .515, -1.745]
 				}
 			}
 		});
