@@ -50,9 +50,9 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 					<?php echo $this->Rms->ros2d('#00817b'); ?>
 				</section>
 				<section class="2u">
+					<a href="#" class="button small special" id="segment">Segment</a>
 					<br />
 					<a href="#" class="button small special" id="ready">Ready Arm</a>
-					<br />
 					<br />
 					<a  href="#" class="button small special" id="retract">Retract Arm</a>
 				</section>
@@ -76,6 +76,20 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 		actionName : 'wpi_jaco_msgs/HomeArmAction'
 	});
 
+	var segmentClient = new ROSLIB.Service({
+		ros : _ROS,
+		name : '/rail_segmentation/segment',
+		serviceType : 'rail_segmentation/Segment'
+	});
+
+	document.getElementById('segment').onclick=function() {
+		var request = new ROSLIB.ServiceRequest({
+			clear : true,
+			useMapFrame : true,
+			segmentOnRobot : false
+		});
+		segmentClient.callService(request, function(result) {});
+	};
 	document.getElementById('ready').onclick=function() {
 		var goal = new ROSLIB.Goal({
 			actionClient : armClient,
