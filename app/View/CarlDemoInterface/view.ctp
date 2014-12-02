@@ -8,7 +8,7 @@
  * @copyright	2014 Worcester Polytechnic Institute
  * @link		https://github.com/WPI-RAIL/CarlDemoInterface
  * @since		CarlDemoInterface v 0.0.1
- * @version		0.0.1
+ * @version		0.0.2
  * @package		app.View.CarlDemoInterface
  */
 ?>
