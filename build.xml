@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project name="rms" default="build">
-    <property name="src.dir" value="../app" />
-    <property name="doc.dir" value="../doc" />
-    <property name="php-doc.dir" value="../doc/php" />
+    <property name="src.dir" value="app" />
+    <property name="doc.dir" value="doc" />
+    <property name="php-doc.dir" value="doc/php" />
 
     <!-- Run a basic, simple linter -->
     <target name="lint">

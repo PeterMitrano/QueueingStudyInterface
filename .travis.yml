@@ -14,7 +14,6 @@ before_script:
   - pear channel-discover pear.cakephp.org
   - pear install phing/phing PHP_CodeSniffer-1.5.6 cakephp/CakePHP_CodeSniffer
   - phpenv rehash
-  - cd utils
 
 script:
   - phing build

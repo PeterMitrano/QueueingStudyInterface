@@ -18,9 +18,9 @@ echo
 
 # check the directory we are working in
 DIR=`pwd`
-if [[ $DIR != *install ]]
+if [[ $DIR != *CarlDemoInterface ]]
 then
-	echo "ERROR: Please run this script in the 'install' directory."
+	echo "ERROR: Please run this script in the 'CarlDemoInterface' directory."
 	exit;
 fi
 
@@ -31,9 +31,9 @@ if [ ! -d "$RMS" ]; then
 fi
 
 echo "Copying 'app' scripts to local RMS directory..."
-cp ../app/Controller/*.php $RMS/Controller
-cp -r ../app/View/* $RMS/View
-cp -r ../app/webroot/img/* $RMS/webroot/img
+cp app/Controller/*.php $RMS/Controller
+cp -r app/View/* $RMS/View
+cp -r app/webroot/img/* $RMS/webroot/img
 
 echo "Installation complete!"
 echo
