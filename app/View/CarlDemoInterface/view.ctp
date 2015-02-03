@@ -182,24 +182,24 @@ new NAV2D.ImageMapClientNav({
 			case 38:
 				// up
 				tilt = (keyDown) ? -10 : 0;
+				headControl.publish(new ROSLIB.Message({data:tilt}));
 				break;
 			case 40:
 				// down
 				tilt = (keyDown) ? 10 : 0;
+				headControl.publish(new ROSLIB.Message({data:tilt}));
 				break;
 			case 37:
 				// left
 				pan = (keyDown) ? 10 : 0;
+				frontControl.publish(new ROSLIB.Message({data:pan}));
 				break;
 			case 39:
 				// right
 				pan = (keyDown) ? -10 : 0;
+				frontControl.publish(new ROSLIB.Message({data:pan}));
 				break;
 		}
-
-		// publish the commands
-		headControl.publish(new ROSLIB.Message({data:tilt}));
-		frontControl.publish(new ROSLIB.Message({data:pan}));
 	}
 
 	var body = document.getElementsByTagName('body')[0];
