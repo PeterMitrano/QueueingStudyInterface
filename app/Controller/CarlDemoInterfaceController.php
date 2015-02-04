@@ -10,7 +10,7 @@ App::uses('InterfaceController', 'Controller');
  * @copyright	2014 Worcester Polytechnic Institute
  * @link		https://github.com/WPI-RAIL/CarlDemoInterface
  * @since		CarlDemoInterface v 0.0.1
- * @version		0.0.3
+ * @version		0.0.4
  * @package		app.Controller
  */
 class CarlDemoInterfaceController extends InterfaceController {

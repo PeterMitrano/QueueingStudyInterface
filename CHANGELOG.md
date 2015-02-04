@@ -1,3 +1,6 @@
+2015-02-04 **0.0.4**
+ * Fixed a bug where camera servo inputs were publishing on all key presses [(dekent)](https://github.com/dekent/)
+
 2014-12-18 **0.0.3**
  * Multiple URDFs [(rctoris)](https://github.com/rctoris/)
 
