@@ -72,7 +72,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 <script>
 	var armClient = new ROSLIB.ActionClient({
 		ros : _ROS,
-		serverName : 'jaco_arm/home_arm',
+		serverName : 'carl_moveit_wrapper/common_actions/ready_arm',
 		actionName : 'wpi_jaco_msgs/HomeArmAction'
 	});
 
@@ -110,7 +110,8 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 					fingerCommand : false,
 					repeat : false,
 					joints : [-2.57, 1.39, 0.527, -.084, .515, -1.745]
-				}
+				},
+				numAttempts : 3
 			}
 		});
 		goal.send();
@@ -154,7 +155,7 @@ new NAV2D.ImageMapClientNav({
 	ros : _ROS,
 	rootObject : _VIEWER2D.scene,
 	viewer : _VIEWER2D,
-	serverName : '/move_base',
+	serverName : '/move_base_safe',
 	image : '/img/CarlDemoInterface/CarlSpace.png',
 	withOrientation : true
 });
