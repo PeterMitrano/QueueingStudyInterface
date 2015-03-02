@@ -78,16 +78,12 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 
 	var segmentClient = new ROSLIB.Service({
 		ros : _ROS,
-		name : '/rail_segmentation/segment',
-		serviceType : 'rail_segmentation/Segment'
+		name : '/rail_segmentation/segment_auto',
+		serviceType : 'std_srvs/Empty'
 	});
 
 	document.getElementById('segment').onclick=function() {
-		var request = new ROSLIB.ServiceRequest({
-			clear : true,
-			useMapFrame : true,
-			segmentOnRobot : false
-		});
+		var request = new ROSLIB.ServiceRequest({});
 		segmentClient.callService(request, function(result) {});
 	};
 	document.getElementById('ready').onclick=function() {
