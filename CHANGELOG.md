@@ -1,3 +1,6 @@
+2015-03-24 **0.0.6**
+ * Switched segment to segment_auto service [(dekent)](https://github.com/dekent/)
+ 
 2015-02-05 **0.0.5**
  * Updated topics for safe nave and safer home/retract [(dekent)](https://github.com/dekent/)
 
