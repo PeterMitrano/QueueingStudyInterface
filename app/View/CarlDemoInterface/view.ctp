@@ -32,6 +32,17 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 <section class="wrapper style4 container">
 	<div class="content center">
 		<section>
+			<div>
+				<h3 id="queue_status"></h3>
+			</div>
+			<div>
+				<?php
+					echo $this->Html->link(
+						'Return To My Account',
+						array('controller' => 'users' , 'action' => 'view')
+					);
+				?>
+			</div>
 			<div class="row">
 				<section class="6u">
 					<?php echo $this->Rms->ros3d('#50817b', 0.66, 0.75); ?>
@@ -210,4 +221,100 @@ new NAV2D.ImageMapClientNav({
 	body.addEventListener('keyup', function(e) {
 		handleKey(e.keyCode, false);
 	}, false);
+</script>
+
+<script>
+
+	var enqueue_pub = new ROSLIB.Topic({
+		ros : _ROS,
+		name : 'rms_enqueue',
+		messageType: 'std_msgs/Int32'
+	});
+	enqueue_pub.advertise();
+
+	var dequeue_pub= new ROSLIB.Topic({
+		ros : _ROS,
+		name : 'rms_dequeue',
+		messageType: 'std_msgs/Int32'
+	});
+	dequeue_pub.advertise();
+
+	var user_id = <?php echo $appointment['Appointment']['user_id']?>;
+
+	var enqueue = function(){
+		console.log("enqueue");
+		enqueue_pub.publish(new ROSLIB.Message({data : user_id}));
+	};
+
+	var dequeue = function(){
+		console.log("dequeue");
+		dequeue_pub.publish(new ROSLIB.Message({data : user_id}));
+	};
+
+	var queue_sub = new ROSLIB.Topic({
+		ros : _ROS,
+		name : 'rms_queue',
+		messageType : 'rms_queue_manager/RMSQueue'
+	});
+
+	var pop_front_sub = new ROSLIB.Topic({
+		ros : _ROS,
+		name : 'rms_pop_front',
+		messageType : 'std_msgs/Int32'
+	});
+
+
+	/**
+	 * when I receive a queue, set instructions/enable controls based on position
+	 * if I am not in queue, send message to rms_queue_manager node to add me
+	 * @param message RMSQueue message, list of UserStatus messages
+	 */
+	queue_sub.subscribe(function(message){
+
+		var queue_status = document.getElementById("queue_status");
+		var queue_status_msg = ""; //do we want a default value?
+
+		var i= message.queue.length;
+		while (i--){
+			if (user_id === message.queue[i]['user_id']){
+				if (i == 0){
+					queue_status_msg = "GO GO GO!!!!";
+				}
+				else
+				{
+					var wait_time = message.queue[i]['wait_time'].secs;
+					queue_status_msg = "position = " + i + "   wait = " + wait_time;
+				}
+			}
+		}
+
+		queue_status.innerHTML = queue_status_msg;
+	});
+
+	/**
+	 * if I receive a pop_front message with my id, deqeue
+	 */
+	pop_front_sub.subscribe(function(message){
+		var pop_user_id = message.data;
+		if (user_id === pop_user_id){
+			alert("Sorry, your time with carl is up...");
+
+			//here we should present the user with the options (leave or re-enter queue)
+
+			dequeue();
+		}
+	});
+
+	/**
+	 * when I exit the webpage, kick me out
+	 */
+	window.onbeforeunload = function(){
+		dequeue();
+		return undefined;
+	}
+
+	/**
+	 * Add me!
+	 */
+	enqueue();
 </script>
