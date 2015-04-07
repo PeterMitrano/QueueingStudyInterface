@@ -7,6 +7,10 @@ This repository contains an interface for the [Robot Management System (RMS)](ht
 
 This project is released as part of the [Robot Web Tools](http://robotwebtools.org/) effort.
 
+## Queueing
+
+The Carl Demo Interface is 
+
 ### Setup
 To setup the interface on a server running the RMS, run the automated script in the [install](install) directory:
 
