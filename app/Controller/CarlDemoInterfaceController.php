@@ -31,7 +31,8 @@ class CarlDemoInterfaceController extends InterfaceController {
 				'nav2djs' => 'current',
 				'ros3djs' => 'current',
 				'keyboardteleopjs' => 'current',
-				'mjpeg' => 'current'
+				'mjpeg' => 'current',
+				'rosqueuejs' => 'current'
 			)
 		);
 	}

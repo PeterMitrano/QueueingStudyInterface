@@ -29,33 +29,33 @@ echo $this->Rms->tf(
 echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment['Teleop'][0]['throttle']);
 ?>
 
-<section class="wrapper style4">
-	<div class="content center">
+<section class='wrapper style4'>
+	<div class='content center'>
 		<section>
-			<div class="row">
-				<div class="12u">
-					<h3 id="queue_status">Queue Status...</h3>
+			<div class='row'>
+				<div class='12u'>
+					<h3 id='queueStatus'>Queue Status...</h3>
 				</div>
 			</div>
 		</section>
-		<div class="row">
-			<div class="6u">
+		<div class='row'>
+			<div class='6u'>
 				<?php echo $this->Rms->ros3d('#50817b', 0.66, 0.75); ?>
 			</div>
-			<div class="6u stream">
-				<div id="mjpeg">
+			<div class='6u stream'>
+				<div id='mjpeg'>
 				</div>
 			</div>
 		</div>
-		<div class="row">
-			<section class="4u">
-				<a href="#" class="button fit special" id="segment">Segment</a>
+		<div class='row'>
+			<section class='4u'>
+				<a href='#' class='button fit special' id='segment'>Segment</a>
 				<br/>
-				<a href="#" class="button fit special" id="ready">Ready Arm</a>
+				<a href='#' class='button fit special' id='ready'>Ready Arm</a>
 				<br/>
-				<a href="#" class="button fit special" id="retract">Retract Arm</a>
+				<a href='#' class='button fit special' id='retract'>Retract Arm</a>
 			</section>
-			<section class="4u">
+			<section class='4u'>
 				<br/>
 				Use the <strong>W, A, S, D</strong> keys to drive the robot. Use the <strong>arrow keys</strong> to
 				move the camera.Use the <strong>3D interface</strong> to control the arm. Right clicking the gripper
@@ -64,8 +64,8 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 				actions.
 				<br/>
 			</section>
-			<section class="4u">
-				<div id="action_feedback">
+			<section class='4u'>
+				<div id='action_feedback'>
 					action feedback...
 				</div>
 			</section>
@@ -77,7 +77,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 	var armClient = new ROSLIB.ActionClient({
 		ros: _ROS,
 		serverName: 'carl_moveit_wrapper/common_actions/ready_arm',
-		actionName: 'wpi_jaco_msgs/HomeArmAction'
+		actionName: 'wpi_jacoMsgs/HomeArmAction'
 	});
 
 	var segmentClient = new ROSLIB.Service({
@@ -98,6 +98,9 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 				retract: false
 			}
 		});
+		goal.on('feedback', function(feedback){
+			console.log(feedback);
+		});
 		goal.send();
 	};
 	document.getElementById('retract').onclick = function () {
@@ -114,6 +117,9 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 				},
 				numAttempts: 3
 			}
+		});
+		goal.on('feedback', function(feedback){
+			console.log(feedback);
 		});
 		goal.send();
 	};
@@ -156,12 +162,12 @@ echo $this->Rms->interactiveMarker(
 	var headControl = new ROSLIB.Topic({
 		ros: _ROS,
 		name: 'asus_controller/tilt',
-		messageType: 'std_msgs/Float64'
+		messageType: 'stdMsgs/Float64'
 	});
 	var frontControl = new ROSLIB.Topic({
 		ros: _ROS,
 		name: 'creative_controller/pan',
-		messageType: 'std_msgs/Float64'
+		messageType: 'stdMsgs/Float64'
 	});
 
 	var handleKey = function (keyCode, keyDown) {
@@ -207,99 +213,50 @@ echo $this->Rms->interactiveMarker(
 </script>
 
 <script>
-
-	var dequeue_pub = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'rms_dequeue',
-		messageType: 'std_msgs/Int32'
-	});
-	dequeue_pub.advertise();
-
-	var enqueue_pub = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'rms_enqueue',
-		messageType: 'std_msgs/Int32'
-	});
-	enqueue_pub.advertise();
-
-
-	var user_id = <?php echo $appointment['Appointment']['user_id']?>;
-
-	var enqueue = function () {
-		console.log("enqueue");
-		enqueue_pub.publish(new ROSLIB.Message({data: user_id}));
-	};
-
-	var dequeue = function () {
-		console.log("dequeue");
-		dequeue_pub.publish(new ROSLIB.Message({data: user_id}));
-	};
-
-	var queue_sub = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'rms_queue',
-		messageType: 'rms_queue_manager/RMSQueue'
-	});
-
-	var pop_front_sub = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'rms_pop_front',
-		messageType: 'std_msgs/Int32'
+	var rosQueue = new ROSQUEUE.RosQueue({
+		ros : _ROS,
+		userId : <?php echo $appointment['Appointment']['user_id']?>
 	});
 
 
 	/**
 	 * when I receive a queue, set instructions/enable controls based on position
 	 * if I am not in queue, send message to rms_queue_manager node to add me
-	 * @param message RMSQueue message, list of UserStatus messages
+	 * @param data objected with position, active, and wait keys
 	 */
-	queue_sub.subscribe(function (message) {
+	rosQueue.onQueueUpdate = function (data) {
+		var queueStatus = document.getElementById('queueStatus');
+		var queueStatusMsg = ''; //do we want a default value?
 
-		var queue_status = document.getElementById("queue_status");
-		var queue_status_msg = ""; //do we want a default value?
-
-		var i = message.queue.length;
-		while (i--) {
-			if (user_id === message.queue[i]['user_id']) {
-				if (i == 0) {
-					queue_status_msg = "GO GO GO!!!!";
-				}
-				else {
-					var wait_time = message.queue[i]['wait_time'].secs;
-					queue_status_msg = "position = " + i + "   wait = " + wait_time;
-				}
-			}
+		if (data.active){
+			queueStatusMsg = 'GO GO GO!!!!';
 		}
-
-		queue_status.innerHTML = queue_status_msg;
-	});
+		else {
+			queueStatusMsg = 'position = ' + data.position + '   wait = ' + data.wait;
+		}
+		queueStatus.innerHTML = queueStatusMsg;
+	};
 
 	/**
 	 * if I receive a pop_front message with my id, deqeue
+	 * @param message Int32 message, the id of the user to remove
 	 */
-	pop_front_sub.subscribe(function (message) {
-		var pop_user_id = message.data;
-		if (user_id === pop_user_id) {
-			alert("Sorry, your time with carl is up...");
-
-			//here we should present the user with the options (leave or re-enter queue)
-
-			dequeue();
-		}
-	});
+	rosQueue.onTimeout = function (message) {
+		alert("your time with carl is up!");
+	};
 
 	/**
 	 * when I exit the webpage, kick me out
 	 */
 	window.onbeforeunload = function () {
-		dequeue();
+		rosQueue.dequeue();
 		return undefined;
-	}
+	};
 
 	/**
-	 * Add me!
+	 * Add me when I first visit the site
 	 */
-	enqueue();
+	rosQueue.enqueue();
 </script>
 
 <script>
@@ -308,7 +265,14 @@ echo $this->Rms->interactiveMarker(
 		host: 'localhost',
 		width: 600,
 		height: 434,
-		topics: ["/camera/rgb/image_raw", "/sink_camera/rgb/image_raw", "/coffee_table_camera/rgb/image_raw"],
-		labels: ["First Person", "Sink", "Coffee Table"]
+		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
+		labels: ['First Person', 'Sink', 'Coffee Table']
 	});
+</script>
+
+<script>
+	/**
+	 * Read the feedback from the action request and make it show!
+	 */
+
 </script>
