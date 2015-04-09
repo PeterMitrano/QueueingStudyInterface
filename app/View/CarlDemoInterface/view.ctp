@@ -207,33 +207,12 @@ echo $this->Rms->interactiveMarker(
 </script>
 
 <script>
+	var userId = <?php echo $appointment['Appointment']['user_id']?>;
 
-	var dequeue_pub = new ROSLIB.Topic({
+	var rosQueue = new ROSQUEUE.RosQueue({
 		ros: _ROS,
-		name: 'rms_dequeue',
-		messageType: 'std_msgs/Int32'
+		userId: userId
 	});
-	dequeue_pub.advertise();
-
-	var enqueue_pub = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'rms_enqueue',
-		messageType: 'std_msgs/Int32'
-	});
-	enqueue_pub.advertise();
-
-
-	var user_id = <?php echo $appointment['Appointment']['user_id']?>;
-
-	var enqueue = function () {
-		console.log("enqueue");
-		enqueue_pub.publish(new ROSLIB.Message({data: user_id}));
-	};
-
-	var dequeue = function () {
-		console.log("dequeue");
-		dequeue_pub.publish(new ROSLIB.Message({data: user_id}));
-	};
 
 	var queue_sub = new ROSLIB.Topic({
 		ros: _ROS,
@@ -253,14 +232,13 @@ echo $this->Rms->interactiveMarker(
 	 * if I am not in queue, send message to rms_queue_manager node to add me
 	 * @param message RMSQueue message, list of UserStatus messages
 	 */
-	queue_sub.subscribe(function (message) {
-
+	rosQueue.queueSub.subscribe(function (message) {
 		var queue_status = document.getElementById("queue_status");
-		var queue_status_msg = ""; //do we want a default value?
+		var queue_status_msg = "Queue Status..."; //do we want a default value?
 
 		var i = message.queue.length;
 		while (i--) {
-			if (user_id === message.queue[i]['user_id']) {
+			if (userId === message.queue[i]['user_id']) {
 				if (i == 0) {
 					queue_status_msg = "GO GO GO!!!!";
 				}
@@ -277,14 +255,11 @@ echo $this->Rms->interactiveMarker(
 	/**
 	 * if I receive a pop_front message with my id, deqeue
 	 */
-	pop_front_sub.subscribe(function (message) {
-		var pop_user_id = message.data;
-		if (user_id === pop_user_id) {
+	rosQueue.popFrontSub.subscribe(function (message) {
+		var pop_userId = message.data;
+		if (userId === pop_userId) {
 			alert("Sorry, your time with carl is up...");
-
-			//here we should present the user with the options (leave or re-enter queue)
-
-			dequeue();
+			rosQueue.dequeue();
 		}
 	});
 
@@ -292,14 +267,14 @@ echo $this->Rms->interactiveMarker(
 	 * when I exit the webpage, kick me out
 	 */
 	window.onbeforeunload = function () {
-		dequeue();
+		rosQueue.dequeue();
 		return undefined;
 	}
 
 	/**
 	 * Add me!
 	 */
-	enqueue();
+	rosQueue.enqueue();
 </script>
 
 <script>
