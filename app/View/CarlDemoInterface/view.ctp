@@ -224,12 +224,21 @@ echo $this->Rms->interactiveMarker(
 	 * if I am not in queue, send message to rms_queue_manager node to add me
 	 * @param data objected with position, active, and wait keys
 	 */
-	rosQueue.onQueueUpdate = function (data) {
-		var queueStatus = document.getElementById('queueStatus');
-		var queueStatusMsg = ''; //do we want a default value?
+	rosQueue.queueSub.subscribe(function (message) {
+		var queue_status = document.getElementById("queue_status");
+		var queue_status_msg = "Queue Status..."; //do we want a default value?
 
-		if (data.active){
-			queueStatusMsg = 'GO GO GO!!!!';
+		var i = message.queue.length;
+		while (i--) {
+			if (userId === message.queue[i]['user_id']) {
+				if (i == 0) {
+					queue_status_msg = "GO GO GO!!!!";
+				}
+				else {
+					var wait_time = message.queue[i]['wait_time'].secs;
+					queue_status_msg = "position = " + i + "   wait = " + wait_time;
+				}
+			}
 		}
 		else {
 			queueStatusMsg = 'position = ' + data.position + '   wait = ' + data.wait;
@@ -241,9 +250,13 @@ echo $this->Rms->interactiveMarker(
 	 * if I receive a pop_front message with my id, deqeue
 	 * @param message Int32 message, the id of the user to remove
 	 */
-	rosQueue.onTimeout = function (message) {
-		alert("your time with carl is up!");
-	};
+	rosQueue.popFrontSub.subscribe(function (message) {
+		var pop_userId = message.data;
+		if (userId === pop_userId) {
+			alert("Sorry, your time with carl is up...");
+			rosQueue.dequeue();
+		}
+	});
 
 	/**
 	 * when I exit the webpage, kick me out
