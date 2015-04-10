@@ -217,7 +217,22 @@ echo $this->Rms->interactiveMarker(
 <script>
 	var rosQueue = new ROSQUEUE.Queue({
 		ros : _ROS,
-		userId : <?php echo $appointment['Appointment']['user_id']?>
+		userId : <?php 
+			if (isset($appointment['Appointment']['user_id'])){
+				echo $appointment['Appointment']['user_id'];
+			}
+			else {
+				echo -1;
+			}
+		?>,
+		studyTime : <?php 
+			if (isset($appointment['Slot']['Condition']['IFace'])){
+				echo $appointment['Slot']['Condition']['Study']['length'];
+			}
+			else {
+				echo 130;
+			}
+		?>
 	});
 
 
