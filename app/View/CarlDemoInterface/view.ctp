@@ -118,10 +118,12 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 				numAttempts: 3
 			}
 		});
+
 		goal.on('feedback', function(feedback){
 			console.log(feedback);
 		});
 		goal.send();
+		console.log("retracting...");
 	};
 </script>
 
@@ -213,7 +215,7 @@ echo $this->Rms->interactiveMarker(
 </script>
 
 <script>
-	var rosQueue = new ROSQUEUE.RosQueue({
+	var rosQueue = new ROSQUEUE.Queue({
 		ros : _ROS,
 		userId : <?php echo $appointment['Appointment']['user_id']?>
 	});
@@ -225,26 +227,24 @@ echo $this->Rms->interactiveMarker(
 	 * @param data objected with position, active, and wait keys
 	 */
 	rosQueue.queueSub.subscribe(function (message) {
-		var queue_status = document.getElementById("queue_status");
-		var queue_status_msg = "Queue Status..."; //do we want a default value?
+		var queueStatus = document.getElementById("queueStatus");
+		var queueStatusMsg = "Queue Status..."; //do we want a default value?
 
 		var i = message.queue.length;
 		while (i--) {
-			if (userId === message.queue[i]['user_id']) {
+			if (rosQueue.userId === message.queue[i]['user_id']) {
 				if (i == 0) {
-					queue_status_msg = "GO GO GO!!!!";
+					queueStatusMsg = "GO GO GO!!!!";
 				}
 				else {
 					var wait_time = message.queue[i]['wait_time'].secs;
-					queue_status_msg = "position = " + i + "   wait = " + wait_time;
+					queueStatusMsg = "position = " + i + "   wait = " + wait_time;
 				}
 			}
 		}
-		else {
-			queueStatusMsg = 'position = ' + data.position + '   wait = ' + data.wait;
-		}
+
 		queueStatus.innerHTML = queueStatusMsg;
-	};
+	});
 
 	/**
 	 * if I receive a pop_front message with my id, deqeue
@@ -252,7 +252,7 @@ echo $this->Rms->interactiveMarker(
 	 */
 	rosQueue.popFrontSub.subscribe(function (message) {
 		var pop_userId = message.data;
-		if (userId === pop_userId) {
+		if (rosQueue.userId === pop_userId) {
 			alert("Sorry, your time with carl is up...");
 			rosQueue.dequeue();
 		}
@@ -275,9 +275,10 @@ echo $this->Rms->interactiveMarker(
 <script>
 	new MJPEGCANVAS.MultiStreamViewer({
 		divID: 'mjpeg',
-		host: 'localhost',
-		width: 600,
-		height: 434,
+		host: 'carl-bot',
+		width: 480,
+		height: 430,
+		quality: 20,
 		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
 		labels: ['First Person', 'Sink', 'Coffee Table']
 	});
