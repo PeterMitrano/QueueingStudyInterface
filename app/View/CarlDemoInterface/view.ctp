@@ -98,7 +98,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 				retract: false
 			}
 		});
-		goal.on('feedback', function(feedback){
+		goal.on('feedback', function (feedback) {
 			console.log(feedback);
 		});
 		goal.send();
@@ -119,7 +119,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 			}
 		});
 
-		goal.on('feedback', function(feedback){
+		goal.on('feedback', function (feedback) {
 			console.log(feedback);
 		});
 		goal.send();
@@ -216,9 +216,9 @@ echo $this->Rms->interactiveMarker(
 
 <script>
 	var rosQueue = new ROSQUEUE.Queue({
-		ros : _ROS,
-		studyTime : 10,
-		userId : <?php 
+		ros: _ROS,
+		studyTime: 10,
+		userId: <?php
 			if (isset($appointment['Appointment']['user_id'])){
 				echo $appointment['Appointment']['user_id'];
 			}
@@ -228,42 +228,27 @@ echo $this->Rms->interactiveMarker(
 		?>
 	});
 
-
 	/**
 	 * when I receive a queue, set instructions/enable controls based on position
 	 * if I am not in queue, send message to rms_queue_manager node to add me
 	 * @param data objected with position, active, and wait keys
 	 */
-	rosQueue.queueSub.subscribe(function (message) {
+	rosQueue.on("queue_sub", function (data) {
 		var queueStatus = document.getElementById("queueStatus");
-		var queueStatusMsg = "Queue Status..."; //do we want a default value?
-
-		var i = message.queue.length;
-		while (i--) {
-			if (rosQueue.userId === message.queue[i]['user_id']) {
-				if (i == 0) {
-					queueStatusMsg = "GO GO GO!!!!";
-				}
-				else {
-					var wait_time = message.queue[i]['wait_time'].secs;
-					queueStatusMsg = "position = " + i + "   wait = " + wait_time;
-				}
-			}
+		if (data.active){
+			queueStatus.innerHTML = "Go go go!!!";
 		}
-
-		queueStatus.innerHTML = queueStatusMsg;
+		else {
+			queueStatus.innerHTML = data.min + ":" + data.sec;
+		}
 	});
 
-	/**
-	 * if I receive a pop_front message with my id, deqeue
+	/*
+	 * notify user if I receive a pop_front message
 	 * @param message Int32 message, the id of the user to remove
 	 */
-	rosQueue.popFrontSub.subscribe(function (message) {
-		var pop_userId = message.data;
-		if (rosQueue.userId === pop_userId) {
-			alert("Sorry, your time with carl is up...");
-			rosQueue.dequeue();
-		}
+	rosQueue.on("pop_front_sub", function () {
+		alert("Sorry, your time with carl is up...");
 	});
 
 	/**
