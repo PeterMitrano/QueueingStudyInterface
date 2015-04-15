@@ -74,10 +74,73 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 </section>
 
 <script>
+	var enabled = false;
+	var rosQueue = new ROSQUEUE.Queue({
+		ros: _ROS,
+		studyTime: 10,
+		userId: <?php
+			if (isset($appointment['Appointment']['user_id'])){
+				echo $appointment['Appointment']['user_id'];
+			}
+			else {
+				echo -1;
+			}
+		?>
+	});
+
+	/**
+	 * when I receive a queue, set instructions/enable controls based on position
+	 * if I am not in queue, send message to rms_queue_manager node to add me
+	 * @param data objected with position, active, and wait keys
+	 */
+	rosQueue.on("queue_sub", function (data) {
+		var queueStatus = document.getElementById("queueStatus");
+		if (data.active){
+			queueStatus.innerHTML = "Go go go!!!";
+			enableInterface();
+		}
+		else {
+			disableInterface();
+			queueStatus.innerHTML = data.min + ":" + data.sec;
+		}
+	});
+
+	function enableInterface(){
+		enabled = true;
+	}
+
+	function disableInterface(){
+		enabled = false;
+
+	}
+
+	/*
+	 * notify user if I receive a pop_front message
+	 * @param message Int32 message, the id of the user to remove
+	 */
+	rosQueue.on("pop_front_sub", function () {
+		alert("Sorry, your time with carl is up...");
+	});
+
+	/**
+	 * when I exit the webpage, kick me out
+	 */
+	window.onbeforeunload = function () {
+		rosQueue.dequeue();
+		return undefined;
+	};
+
+	/**
+	 * Add me when I first visit the site
+	 */
+	rosQueue.enqueue();
+</script>
+
+<script>
 	var armClient = new ROSLIB.ActionClient({
 		ros: _ROS,
 		serverName: 'carl_moveit_wrapper/common_actions/ready_arm',
-		actionName: 'wpi_jacoMsgs/HomeArmAction'
+		actionName: 'wpi_jaco_msgs/HomeArmAction'
 	});
 
 	var segmentClient = new ROSLIB.Service({
@@ -88,8 +151,14 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 
 	document.getElementById('segment').onclick = function () {
 		var request = new ROSLIB.ServiceRequest({});
-		segmentClient.callService(request, function (result) {
-		});
+
+		if (enabled){
+			segmentClient.callService(request, function (result) {
+			});
+		}
+		else {
+			console.log("disabled!");
+		}
 	};
 	document.getElementById('ready').onclick = function () {
 		var goal = new ROSLIB.Goal({
@@ -101,7 +170,14 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 		goal.on('feedback', function (feedback) {
 			console.log(feedback);
 		});
-		goal.send();
+
+		if (enabled){
+			goal.send();
+			console.log("retracting...");
+		}
+		else {
+			console.log("disabled!");
+		}
 	};
 	document.getElementById('retract').onclick = function () {
 		var goal = new ROSLIB.Goal({
@@ -122,8 +198,15 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 		goal.on('feedback', function (feedback) {
 			console.log(feedback);
 		});
-		goal.send();
-		console.log("retracting...");
+
+		if (enabled){
+			goal.send();
+			console.log("retracting...");
+		}
+		else {
+			console.log("disabled!");
+		}
+
 	};
 </script>
 
@@ -207,62 +290,15 @@ echo $this->Rms->interactiveMarker(
 		if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
 			e.preventDefault();
 		}
-		handleKey(e.keyCode, true);
+		if (enabled){
+			handleKey(e.keyCode, true);
+		}
 	}, false);
 	body.addEventListener('keyup', function (e) {
-		handleKey(e.keyCode, false);
+		if (enabled){
+			handleKey(e.keyCode, false);
+		}
 	}, false);
-</script>
-
-<script>
-	var rosQueue = new ROSQUEUE.Queue({
-		ros: _ROS,
-		studyTime: 10,
-		userId: <?php
-			if (isset($appointment['Appointment']['user_id'])){
-				echo $appointment['Appointment']['user_id'];
-			}
-			else {
-				echo -1;
-			}
-		?>
-	});
-
-	/**
-	 * when I receive a queue, set instructions/enable controls based on position
-	 * if I am not in queue, send message to rms_queue_manager node to add me
-	 * @param data objected with position, active, and wait keys
-	 */
-	rosQueue.on("queue_sub", function (data) {
-		var queueStatus = document.getElementById("queueStatus");
-		if (data.active){
-			queueStatus.innerHTML = "Go go go!!!";
-		}
-		else {
-			queueStatus.innerHTML = data.min + ":" + data.sec;
-		}
-	});
-
-	/*
-	 * notify user if I receive a pop_front message
-	 * @param message Int32 message, the id of the user to remove
-	 */
-	rosQueue.on("pop_front_sub", function () {
-		alert("Sorry, your time with carl is up...");
-	});
-
-	/**
-	 * when I exit the webpage, kick me out
-	 */
-	window.onbeforeunload = function () {
-		rosQueue.dequeue();
-		return undefined;
-	};
-
-	/**
-	 * Add me when I first visit the site
-	 */
-	rosQueue.enqueue();
 </script>
 
 <script>
