@@ -75,7 +75,7 @@ echo $this->Rms->tf(
 	var enabled = false;
 	var rosQueue = new ROSQUEUE.Queue({
 		ros: _ROS,
-		studyTime: 1,
+		studyTime: 10,
 		userId: <?php
 			if (isset($appointment['Appointment']['user_id'])){
 				echo $appointment['Appointment']['user_id'];
@@ -86,64 +86,59 @@ echo $this->Rms->tf(
 		?>
 	});
 
-	/**
-	 * when I receive a queue, set instructions/enable controls based on position
-	 * if I am not in queue, send message to rms_queue_manager node to add me
-	 * @param data objected with position, active, and wait keys
+	/*
+	 * notify user if I receive a now_active message
+	 * @param message Int32 message, the id of the user to remove
 	 */
-	rosQueue.on("queue_sub", function (data) {
-		var queueStatus = document.getElementById("queueStatus");
-		if (data.active) {
-			queueStatus.innerHTML = "Go go go!!!";
-			enableInterface();
-		}
-		else {
-			disableInterface();
-			queueStatus.innerHTML = data.min + ":" + data.sec;
-		}
-	});
+	rosQueue.on("enabled", function () {
+		document.getElementById("queueStatus").innerHTML = "Go go go!";
+		document.getElementById('segment').className = "button fit special";
+		document.getElementById('ready').className = "button fit special";
+		document.getElementById('retract').className = "button fit special";
 
-
-	/**
-	 * make the appropriate changes to the interface to show the user that they are enabled
-	 */
-	function enableInterface() {
-		if (!enabled) {
-			document.getElementById('segment').className = "button fit special";
-			document.getElementById('ready').className = "button fit special";
-			document.getElementById('retract').className = "button fit special";
-
-			//keyboard tele-op
+		//keyboard tele-op
+		if (typeof _TELEOP == 'undefined') {
 			_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: "/cmd_vel_safe"});
 			_TELEOP.throttle = 0.800000;
+		}
 
-			// Interactive Markers
-			<?php echo
-			$this->Rms-> interactiveMarker(
-				$environment['Im'][0]['topic'], $environment['Im'][0]['Collada']['id'], $environment['Im'][0]['Resource']['url']
-			);
-			?>
+		// Interactive Markers
+		if (typeof _IM == 'undefined'){
+			_IM = new ROS3D.InteractiveMarkerClient({
+				ros: _ROS,
+				tfClient: _TF,
+				camera: _VIEWER.camera,
+				rootObject: _VIEWER.selectableObjects,
+				loader: 1,
+				path: "http://resources.robotwebtools.org/",
+				topic: "/carl_interactive_manipulation"
+			});
 		}
 		enabled = true;
-	}
+	});
 
 	/**
-	 * make the appropriate changes to the interface to show the user that they are isn't enabled
+	 * when I receive a new time update the interface
+	 * @param data objected with time in min & sec
 	 */
-	function disableInterface() {
-		enabled = false;
-		document.getElementById('segment').className = "button fit";
-		document.getElementById('ready').className = "button fit";
-		document.getElementById('retract').className = "button fit";
-	}
+	rosQueue.on("wait_time", function (data) {
+		document.getElementById("queueStatus").innerHTML = data.min + ":" + data.sec;
+	});
 
 	/*
 	 * notify user if I receive a pop_front message
 	 * @param message Int32 message, the id of the user to remove
 	 */
-	rosQueue.on("pop_front_sub", function () {
-		alert("Sorry, your time with carl is up...");
-		disableInterface();
+	rosQueue.on("disabled", function () {
+		enabled = false;
+		document.getElementById('segment').className = "button fit";
+		document.getElementById('ready').className = "button fit";
+		document.getElementById('retract').className = "button fit";
+
+	});
+
+	rosQueue.on("dequeue", function(){
+		document.getElementById("queueStatus").innerHTML = "You're time with carl is up! Refresh to re-enter the queue."
 	});
 
 	/**
@@ -164,7 +159,7 @@ echo $this->Rms->tf(
 	var feedback = ROSLIB.Topic({
 		ros: _ROS,
 		name: '/rms_interface_feedback',
-		messageType: '1'
+		messageType: 'carl_moveit/Error'
 	});
 
 	/**
@@ -207,7 +202,7 @@ echo $this->Rms->tf(
 
 		if (enabled) {
 			goal.send();
-			console.log("retracting...");
+			console.log("readying...");
 		}
 		else {
 			console.log("disabled!");
@@ -267,82 +262,76 @@ foreach ($environment['Urdf'] as $urdf) {
 }
 ?>
 
-<
-script >
-// add camera controls
-var headControl = new ROSLIB.Topic({
-ros: _ROS,
-name: 'asus_controller/tilt',
-messageType: 'stdMsgs/Float64'
-});
-var frontControl = new ROSLIB.Topic({
-ros: _ROS,
-name: 'creative_controller/pan',
-messageType: 'stdMsgs/Float64'
-});
+<script>
+	// add camera controls
+	var headControl = new ROSLIB.Topic({
+		ros: _ROS,
+		name: 'asus_controller/tilt',
+		messageType: 'std_msgs/Float64'
+	});
+	var frontControl = new ROSLIB.Topic({
+		ros: _ROS,
+		name: 'creative_controller/pan',
+		messageType: 'std_msgs/Float64'
+	});
 
-var handleKey = function (keyCode, keyDown) {
-var pan = 0;
-var tilt = 0;
+	var handleKey = function (keyCode, keyDown) {
+		var pan = 0;
+		var tilt = 0;
 
 // check which key was pressed
-switch (keyCode) {
-case 38:
+		switch (keyCode) {
+			case 38:
 // up
-tilt = (keyDown) ? -10 : 0;
-headControl.publish(new ROSLIB.Message({data: tilt}));
-break;
-case 40:
+				tilt = (keyDown) ? -10 : 0;
+				headControl.publish(new ROSLIB.Message({data: tilt}));
+				break;
+			case 40:
 // down
-tilt = (keyDown) ? 10 : 0;
-headControl.publish(new ROSLIB.Message({data: tilt}));
-break;
-case 37:
+				tilt = (keyDown) ? 10 : 0;
+				headControl.publish(new ROSLIB.Message({data: tilt}));
+				break;
+			case 37:
 // left
-pan = (keyDown) ? 10 : 0;
-frontControl.publish(new ROSLIB.Message({data: pan}));
-break;
-case 39:
+				pan = (keyDown) ? 10 : 0;
+				frontControl.publish(new ROSLIB.Message({data: pan}));
+				break;
+			case 39:
 // right
-pan = (keyDown) ? -10 : 0;
-frontControl.publish(new ROSLIB.Message({data: pan}));
-break;
-}
-}
+				pan = (keyDown) ? -10 : 0;
+				frontControl.publish(new ROSLIB.Message({data: pan}));
+				break;
+		}
+	}
 
-var body = document.getElementsByTagName('body')[0];
-body.addEventListener('keydown', function (e) {
+	var body = document.getElementsByTagName('body')[0];
+	body.addEventListener('keydown', function (e) {
 // arrow keys
-if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-e.preventDefault();
-}
-if (enabled) {
-handleKey(e.keyCode, true);
-}
-}, false);
-body.addEventListener('keyup', function (e) {
-if (enabled) {
-handleKey(e.keyCode, false);
-}
-}, false);
-</script>
-
-<
-script >
-new MJPEGCANVAS.MultiStreamViewer({
-	divID: 'mjpeg',
-	host: 'carl-bot',
-	width: 480,
-	height: 430,
-	quality: 20,
-	topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
-	labels: ['First Person', 'Sink', 'Coffee Table']
-});
+		if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+			e.preventDefault();
+		}
+		handleKey(e.keyCode, true);
+	}, false);
+	body.addEventListener('keyup', function (e) {
+		handleKey(e.keyCode, false);
+	}, false);
 </script>
 
 <script>
-	/**
-	 * Read the feedback from the action request and make it show!
-	 */
+	new MJPEGCANVAS.MultiStreamViewer({
+		divID: 'mjpeg',
+		host: 'carl-bot',
+		width: 480,
+		height: 430,
+		quality: 20,
+		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
+		labels: ['First Person', 'Sink', 'Coffee Table']
+	});
+</script>
+
+<script>
+/**
+* Read the feedback from the action request and make it show!
+*/
 
 </script>
