@@ -4,6 +4,7 @@
  *
  * The basic interface displays a camera feed and keyboard teleop.
  *
+ * @author        Peter Mitrano - pdmitrano@wpi.edu
  * @author        Russell Toris - rctoris@wpi.edu
  * @copyright    2014 Worcester Polytechnic Institute
  * @link        https://github.com/WPI-RAIL/CarlDemoInterface
@@ -24,9 +25,6 @@ echo $this->Rms->tf(
 	$environment['Tf']['translational'],
 	$environment['Tf']['rate']
 );
-
-// add teleop
-echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment['Teleop'][0]['throttle']);
 ?>
 
 <section class='wrapper style4'>
@@ -49,11 +47,11 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 		</div>
 		<div class='row'>
 			<section class='4u'>
-				<a href='#' class='button fit special' id='segment'>Segment</a>
+				<a href='#' class='button fit' id='segment'>Segment</a>
 				<br/>
-				<a href='#' class='button fit special' id='ready'>Ready Arm</a>
+				<a href='#' class='button fit' id='ready'>Ready Arm</a>
 				<br/>
-				<a href='#' class='button fit special' id='retract'>Retract Arm</a>
+				<a href='#' class='button fit' id='retract'>Retract Arm</a>
 			</section>
 			<section class='4u'>
 				<br/>
@@ -77,7 +75,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 	var enabled = false;
 	var rosQueue = new ROSQUEUE.Queue({
 		ros: _ROS,
-		studyTime: 10,
+		studyTime: 1,
 		userId: <?php
 			if (isset($appointment['Appointment']['user_id'])){
 				echo $appointment['Appointment']['user_id'];
@@ -95,7 +93,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 	 */
 	rosQueue.on("queue_sub", function (data) {
 		var queueStatus = document.getElementById("queueStatus");
-		if (data.active){
+		if (data.active) {
 			queueStatus.innerHTML = "Go go go!!!";
 			enableInterface();
 		}
@@ -105,13 +103,38 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 		}
 	});
 
-	function enableInterface(){
+
+	/**
+	 * make the appropriate changes to the interface to show the user that they are enabled
+	 */
+	function enableInterface() {
+		if (!enabled) {
+			document.getElementById('segment').className = "button fit special";
+			document.getElementById('ready').className = "button fit special";
+			document.getElementById('retract').className = "button fit special";
+
+			//keyboard tele-op
+			_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: "/cmd_vel_safe"});
+			_TELEOP.throttle = 0.800000;
+
+			// Interactive Markers
+			<?php echo
+			$this->Rms-> interactiveMarker(
+				$environment['Im'][0]['topic'], $environment['Im'][0]['Collada']['id'], $environment['Im'][0]['Resource']['url']
+			);
+			?>
+		}
 		enabled = true;
 	}
 
-	function disableInterface(){
+	/**
+	 * make the appropriate changes to the interface to show the user that they are isn't enabled
+	 */
+	function disableInterface() {
 		enabled = false;
-
+		document.getElementById('segment').className = "button fit";
+		document.getElementById('ready').className = "button fit";
+		document.getElementById('retract').className = "button fit";
 	}
 
 	/*
@@ -120,6 +143,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 	 */
 	rosQueue.on("pop_front_sub", function () {
 		alert("Sorry, your time with carl is up...");
+		disableInterface();
 	});
 
 	/**
@@ -129,6 +153,19 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 		rosQueue.dequeue();
 		return undefined;
 	};
+
+	/**
+	 * display feedback to the user. Feedback has a string to display and a severity level (0-3).
+	 * 0 - debug. will be displayed under the interface in smaller test
+	 * 1 - warning. will be displayed under the interface in bold
+	 * 2 - error. will be overlayed on the interface.
+	 * 3 - fatal. will be overlayed on the interface in bold
+	 */
+	var feedback = ROSLIB.Topic({
+		ros: _ROS,
+		name: '/rms_interface_feedback',
+		messageType: '1'
+	});
 
 	/**
 	 * Add me when I first visit the site
@@ -152,7 +189,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 	document.getElementById('segment').onclick = function () {
 		var request = new ROSLIB.ServiceRequest({});
 
-		if (enabled){
+		if (enabled) {
 			segmentClient.callService(request, function (result) {
 			});
 		}
@@ -167,11 +204,8 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 				retract: false
 			}
 		});
-		goal.on('feedback', function (feedback) {
-			console.log(feedback);
-		});
 
-		if (enabled){
+		if (enabled) {
 			goal.send();
 			console.log("retracting...");
 		}
@@ -195,11 +229,7 @@ echo $this->Rms->keyboardTeleop($environment['Teleop'][0]['topic'], $environment
 			}
 		});
 
-		goal.on('feedback', function (feedback) {
-			console.log(feedback);
-		});
-
-		if (enabled){
+		if (enabled) {
 			goal.send();
 			console.log("retracting...");
 		}
@@ -235,82 +265,79 @@ foreach ($environment['Urdf'] as $urdf) {
 		$urdf['Resource']['url']
 	);
 }
-
-// Interactive Markers
-echo $this->Rms->interactiveMarker(
-	$environment['Im'][0]['topic'], $environment['Im'][0]['Collada']['id'], $environment['Im'][0]['Resource']['url']
-);
 ?>
 
-<script>
-	// add camera controls
-	var headControl = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'asus_controller/tilt',
-		messageType: 'stdMsgs/Float64'
-	});
-	var frontControl = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'creative_controller/pan',
-		messageType: 'stdMsgs/Float64'
-	});
+<
+script >
+// add camera controls
+var headControl = new ROSLIB.Topic({
+ros: _ROS,
+name: 'asus_controller/tilt',
+messageType: 'stdMsgs/Float64'
+});
+var frontControl = new ROSLIB.Topic({
+ros: _ROS,
+name: 'creative_controller/pan',
+messageType: 'stdMsgs/Float64'
+});
 
-	var handleKey = function (keyCode, keyDown) {
-		var pan = 0;
-		var tilt = 0;
+var handleKey = function (keyCode, keyDown) {
+var pan = 0;
+var tilt = 0;
 
-		// check which key was pressed
-		switch (keyCode) {
-			case 38:
-				// up
-				tilt = (keyDown) ? -10 : 0;
-				headControl.publish(new ROSLIB.Message({data: tilt}));
-				break;
-			case 40:
-				// down
-				tilt = (keyDown) ? 10 : 0;
-				headControl.publish(new ROSLIB.Message({data: tilt}));
-				break;
-			case 37:
-				// left
-				pan = (keyDown) ? 10 : 0;
-				frontControl.publish(new ROSLIB.Message({data: pan}));
-				break;
-			case 39:
-				// right
-				pan = (keyDown) ? -10 : 0;
-				frontControl.publish(new ROSLIB.Message({data: pan}));
-				break;
-		}
-	}
+// check which key was pressed
+switch (keyCode) {
+case 38:
+// up
+tilt = (keyDown) ? -10 : 0;
+headControl.publish(new ROSLIB.Message({data: tilt}));
+break;
+case 40:
+// down
+tilt = (keyDown) ? 10 : 0;
+headControl.publish(new ROSLIB.Message({data: tilt}));
+break;
+case 37:
+// left
+pan = (keyDown) ? 10 : 0;
+frontControl.publish(new ROSLIB.Message({data: pan}));
+break;
+case 39:
+// right
+pan = (keyDown) ? -10 : 0;
+frontControl.publish(new ROSLIB.Message({data: pan}));
+break;
+}
+}
 
-	var body = document.getElementsByTagName('body')[0];
-	body.addEventListener('keydown', function (e) {
-		// arrow keys
-		if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-			e.preventDefault();
-		}
-		if (enabled){
-			handleKey(e.keyCode, true);
-		}
-	}, false);
-	body.addEventListener('keyup', function (e) {
-		if (enabled){
-			handleKey(e.keyCode, false);
-		}
-	}, false);
+var body = document.getElementsByTagName('body')[0];
+body.addEventListener('keydown', function (e) {
+// arrow keys
+if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+e.preventDefault();
+}
+if (enabled) {
+handleKey(e.keyCode, true);
+}
+}, false);
+body.addEventListener('keyup', function (e) {
+if (enabled) {
+handleKey(e.keyCode, false);
+}
+}, false);
 </script>
 
-<script>
-	new MJPEGCANVAS.MultiStreamViewer({
-		divID: 'mjpeg',
-		host: 'carl-bot',
-		width: 480,
-		height: 430,
-		quality: 20,
-		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
-		labels: ['First Person', 'Sink', 'Coffee Table']
-	});
+<
+script >
+new MJPEGCANVAS.MultiStreamViewer({
+	divID: 'mjpeg',
+	host: 'carl-bot',
+	width: 480,
+	height: 430,
+	quality: 20,
+	topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
+	labels: ['First Person', 'Sink', 'Coffee Table']
+});
 </script>
 
 <script>
