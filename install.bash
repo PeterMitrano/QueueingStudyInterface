@@ -34,6 +34,7 @@ echo "Copying 'app' scripts to local RMS directory..."
 cp app/Controller/*.php $RMS/Controller
 cp -r app/View/* $RMS/View
 cp -r app/webroot/img/* $RMS/webroot/img
+cp -r app/webroot/css/* $RMS/webroot/css
 
 echo "Installation complete!"
 echo

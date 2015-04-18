@@ -1,0 +1,33 @@
+#important_feedback {
+	font-size: 34px;
+	text-transform: uppercase;
+}
+
+#main_content {
+}
+
+#feedback{
+	overflow-y: scroll;
+	overflow-x: hidden;
+	height:200px;
+}
+
+.feedback-overlay {
+	background-color: #868B8C;
+	margin-left:-20px;
+	padding:10px;
+	color: #ffffff;
+	position: absolute;
+	width:100%;
+	opacity: 0.9;
+}
+
+.feedback-overlay.hidden {
+	opacity: 0.0;
+}
+
+.feedback-overlay.fatal {
+	opacity: 0.9;
+	background-color: #c4123022;
+	color: #ffffff;
+}

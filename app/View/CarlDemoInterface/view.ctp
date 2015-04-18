@@ -15,6 +15,11 @@
 ?>
 
 <?php
+	//custom styling
+	echo $this->Html->css('CarlDemoInterface');
+?>
+
+<?php
 // connect to ROS
 echo $this->Rms->ros($environment['Rosbridge']['uri']);
 
@@ -36,7 +41,10 @@ echo $this->Rms->tf(
 				</div>
 			</div>
 		</section>
-		<div class='row'>
+		<div class='row' id="main_content">
+			<div id="important_feedback" class='feedback-overlay hidden'>
+				<h1>ERROR: Shit has hit the fan!</h1>
+			</div>
 			<div class='6u'>
 				<?php echo $this->Rms->ros3d('#50817b', 0.66, 0.75); ?>
 			</div>
@@ -63,7 +71,7 @@ echo $this->Rms->tf(
 				<br/>
 			</section>
 			<section class='4u'>
-				<div id='action_feedback'>
+				<div id='feedback'>
 					action feedback...
 				</div>
 			</section>
@@ -152,15 +160,51 @@ echo $this->Rms->tf(
 	/**
 	 * display feedback to the user. Feedback has a string to display and a severity level (0-3).
 	 * 0 - debug. will be displayed under the interface in smaller test
-	 * 1 - warning. will be displayed under the interface in bold
 	 * 2 - error. will be overlayed on the interface.
-	 * 3 - fatal. will be overlayed on the interface in bold
+	 * 3 - fatal. will be overlayed on the interface with read highlights
 	 */
-	var feedback = ROSLIB.Topic({
+	var feedback = new ROSLIB.Topic({
 		ros: _ROS,
-		name: '/rms_interface_feedback',
-		messageType: 'carl_moveit/Error'
+		name: 'carl_safety/error',
+		messageType: 'carl_safety/Error'
 	});
+	feedback.subscribe(function (message){
+		console.log(message);
+
+		var feedback = document.getElementById("feedback");
+
+		var feedbackOverlay = document.getElementById("important_feedback");
+		feedbackOverlay.className = "feedback-overlay hidden";
+
+		switch(message.severity){
+			case 2:
+				if (message.resolved){
+					feedbackOverlay.className = "feedback-overlay";
+					fadeOverlay();
+				}
+				else {
+					feedbackOverlay.className = "feedback-overlay fatal";
+				}
+			case 1:
+				feedbackOverlay.innerHTML = message.message;
+			case 0:
+				feedback.innerHTML += message.message;
+				feedback.innerHTML += "<br/>";
+				flashFeedback();
+		}
+
+	});
+
+	function flashFeedback(){
+		$('#feedback').animate({opacity: 0}, 100 );
+		$('#feedback').animate({opacity: 1}, 100 );
+	}
+
+	function fadeOverlay(){
+		var feedbackOverlay = document.getElementById("important_feedback");
+		$('important_feedback').animate({opacity: 0}, 1000 );
+		feedbackOverlay.className = "feedback-overlay hidden";
+	}
 
 	/**
 	 * Add me when I first visit the site
