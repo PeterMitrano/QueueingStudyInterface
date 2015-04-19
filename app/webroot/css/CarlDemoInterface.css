@@ -3,13 +3,24 @@
 	text-transform: uppercase;
 }
 
+#queueStatus {
+	margin-top:-40px;
+	font-size: 34px;
+	text-transform: uppercase;
+ }
+
 #main_content {
+	margin-top:-20px;
 }
 
 #feedback{
 	overflow-y: scroll;
 	overflow-x: hidden;
-	height:200px;
+	height:150px;
+	border-top: solid 2px #f1f1f1;
+	border-bottom: solid 2px #f1f1f1;
+	border-left: solid 5px #f1f1f1;
+	margin-bottom: 10px;
 }
 
 .feedback-overlay {
@@ -28,6 +39,6 @@
 
 .feedback-overlay.fatal {
 	opacity: 0.9;
-	background-color: #c4123022;
+	background-color: #c41230;
 	color: #ffffff;
 }

@@ -72,8 +72,9 @@ echo $this->Rms->tf(
 			</section>
 			<section class='4u'>
 				<div id='feedback'>
-					action feedback...
+					feedback...
 				</div>
+				<button id="clearFeedback" class="button special">clear</button>
 			</section>
 		</div>
 	</div>
@@ -99,7 +100,7 @@ echo $this->Rms->tf(
 	 * @param message Int32 message, the id of the user to remove
 	 */
 	rosQueue.on("enabled", function () {
-		document.getElementById("queueStatus").innerHTML = "Go go go!";
+		document.getElementById("queueStatus").innerHTML = "robot active, begin your control";
 		document.getElementById('segment').className = "button fit special";
 		document.getElementById('ready').className = "button fit special";
 		document.getElementById('retract').className = "button fit special";
@@ -202,9 +203,14 @@ echo $this->Rms->tf(
 
 	function fadeOverlay(){
 		var feedbackOverlay = document.getElementById("important_feedback");
-		$('important_feedback').animate({opacity: 0}, 1000 );
+		$('#important_feedback').animate({opacity: 0}, 1000 );
 		feedbackOverlay.className = "feedback-overlay hidden";
 	}
+
+	$('#clearFeedback').click(function(){
+		console.log("click!");
+		document.getElementById("feedback").innerHTML = "feedback..";
+	});
 
 	/**
 	 * Add me when I first visit the site
