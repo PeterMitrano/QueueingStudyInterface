@@ -1,12 +1,16 @@
 #important_feedback {
-	font-size: 34px;
+	font-size: 26px;
+	text-transform: uppercase;
+}
+
+#fatal_feedback {
+	font-size: 26px;
 	text-transform: uppercase;
 }
 
 #queueStatus {
 	margin-top:-40px;
-	font-size: 34px;
-	text-transform: uppercase;
+	font-size: 30px;
  }
 
 #main_content {
@@ -16,29 +20,43 @@
 #feedback{
 	overflow-y: scroll;
 	overflow-x: hidden;
+	word-wrap: break-word;
 	height:150px;
 	border-top: solid 2px #f1f1f1;
 	border-bottom: solid 2px #f1f1f1;
 	border-left: solid 5px #f1f1f1;
 	margin-bottom: 10px;
+	background-color: #ffffff;
+	color: #000000;
+	text-align: left;
+	padding: 4px;
+	font-size: 14px;
 }
 
 .feedback-overlay {
-	background-color: #868B8C;
+	background-color: #ed6d13;
 	margin-left:-20px;
 	padding:10px;
 	color: #ffffff;
 	position: absolute;
 	width:100%;
 	opacity: 0.9;
+	z-index: 200;
 }
 
 .feedback-overlay.hidden {
 	opacity: 0.0;
 }
 
+
 .feedback-overlay.fatal {
 	opacity: 0.9;
+	padding-top: 65px;
+	z-index: 100;
 	background-color: #c41230;
 	color: #ffffff;
+}
+
+.feedback-overlay.fatal.hidden {
+	opacity: 0.0;
 }

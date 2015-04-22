@@ -15,8 +15,8 @@
 ?>
 
 <?php
-	//custom styling
-	echo $this->Html->css('CarlDemoInterface');
+//custom styling
+echo $this->Html->css('CarlDemoInterface');
 ?>
 
 <?php
@@ -43,7 +43,10 @@ echo $this->Rms->tf(
 		</section>
 		<div class='row' id="main_content">
 			<div id="important_feedback" class='feedback-overlay hidden'>
-				<h1>ERROR: Shit has hit the fan!</h1>
+				<h1>ERROR: ...</h1>
+			</div>
+			<div id="fatal_feedback" class='feedback-overlay fatal hidden'>
+				<h1>FATAL ERROR: ...</h1>
 			</div>
 			<div class='6u'>
 				<?php echo $this->Rms->ros3d('#50817b', 0.66, 0.75); ?>
@@ -84,7 +87,7 @@ echo $this->Rms->tf(
 	var enabled = false;
 	var rosQueue = new ROSQUEUE.Queue({
 		ros: _ROS,
-		studyTime: 10,
+		studyTime: 1,
 		userId: <?php
 			if (isset($appointment['Appointment']['user_id'])){
 				echo $appointment['Appointment']['user_id'];
@@ -112,7 +115,7 @@ echo $this->Rms->tf(
 		}
 
 		// Interactive Markers
-		if (typeof _IM == 'undefined'){
+		if (typeof _IM == 'undefined') {
 			_IM = new ROS3D.InteractiveMarkerClient({
 				ros: _ROS,
 				tfClient: _TF,
@@ -123,6 +126,30 @@ echo $this->Rms->tf(
 				topic: "/carl_interactive_manipulation"
 			});
 		}
+		if (typeof _PARKING_MARKERS == 'undefined') {
+			_PARKING_MARKERS = new ROS3D.InteractiveMarkerClient({
+				ros: _ROS,
+				tfClient: _TF,
+				camera: _VIEWER.camera,
+				rootObject: _VIEWER.selectableObjects,
+				topic: "/parking_markers"
+			});
+		}
+
+		var body = document.getElementsByTagName('body')[0];
+		/** arrow keys
+		 * on key up and key down send commands to drive or tilt camera
+		 */
+		body.addEventListener('keydown', function (e) {
+			if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+				e.preventDefault();
+			}
+			handleKey(e.keyCode, true);
+		}, false);
+		body.addEventListener('keyup', function (e) {
+			handleKey(e.keyCode, false);
+		}, false);
+
 		enabled = true;
 	});
 
@@ -130,10 +157,14 @@ echo $this->Rms->tf(
 	 * when I receive a new time update the interface
 	 * @param data objected with time in min & sec
 	 */
-	rosQueue.on("wait_time", function (data) {
-		document.getElementById("queueStatus").innerHTML = data.min + ":" + data.sec;
-	});
-
+	rosQueue.on("wait_time", setTime);
+	function setTime(data) {
+		var d = new Date();
+		d.setSeconds(data.sec);
+		d.setMinutes(data.min);
+		//substring removes hours and AM/PM
+		document.getElementById("queueStatus").innerHTML = "Your waiting time is " + d.toLocaleTimeString().substring(2, 8);
+	}
 	/*
 	 * notify user if I receive a pop_front message
 	 * @param message Int32 message, the id of the user to remove
@@ -146,8 +177,11 @@ echo $this->Rms->tf(
 
 	});
 
-	rosQueue.on("dequeue", function(){
-		document.getElementById("queueStatus").innerHTML = "You're time with carl is up! Refresh to re-enter the queue."
+	/**
+	 * whne the user is dequeued, force refresh the page. This will add them at the end of the queue and end all controls
+	 */
+	 rosQueue.on("dequeue", function () {
+		location.reload();
 	});
 
 	/**
@@ -161,55 +195,54 @@ echo $this->Rms->tf(
 	/**
 	 * display feedback to the user. Feedback has a string to display and a severity level (0-3).
 	 * 0 - debug. will be displayed under the interface in smaller test
-	 * 2 - error. will be overlayed on the interface.
-	 * 3 - fatal. will be overlayed on the interface with read highlights
+	 * 2 - error. will be overlayed on the interface
+	 * 3 - fatal. will be overlayed on the interface in red
 	 */
 	var feedback = new ROSLIB.Topic({
 		ros: _ROS,
 		name: 'carl_safety/error',
 		messageType: 'carl_safety/Error'
 	});
-	feedback.subscribe(function (message){
+
+	feedback.subscribe(function (message) {
 		console.log(message);
-
 		var feedback = document.getElementById("feedback");
-
 		var feedbackOverlay = document.getElementById("important_feedback");
-		feedbackOverlay.className = "feedback-overlay hidden";
+		var fatalFeedbackOverlay = document.getElementById("fatal_feedback");
 
-		switch(message.severity){
+		switch (message.severity) {
 			case 2:
-				if (message.resolved){
-					feedbackOverlay.className = "feedback-overlay";
-					fadeOverlay();
+				if (message.resolved) {
+					fatalFeedbackOverlay.className = "feedback-overlay fatal hidden";
+					feedbackOverlay.className = "feedback-overlay hidden";
 				}
 				else {
-					feedbackOverlay.className = "feedback-overlay fatal";
+					fatalFeedbackOverlay.className = "feedback-overlay fatal";
+					fatalFeedbackOverlay.innerHTML = message.message;
 				}
+				break;
+
 			case 1:
-				feedbackOverlay.innerHTML = message.message;
+				if (message.resolved) {
+					feedbackOverlay.className = "feedback-overlay hidden";
+				}
+				else {
+					feedbackOverlay.className = "feedback-overlay";
+					feedbackOverlay.innerHTML = message.message;
+				}
+				break;
+
 			case 0:
 				feedback.innerHTML += message.message;
 				feedback.innerHTML += "<br/>";
-				flashFeedback();
+				//this will keep the div scrolled to the bottom
+				feedback.scrollTop = feedback.scrollHeight;
 		}
 
 	});
 
-	function flashFeedback(){
-		$('#feedback').animate({opacity: 0}, 100 );
-		$('#feedback').animate({opacity: 1}, 100 );
-	}
-
-	function fadeOverlay(){
-		var feedbackOverlay = document.getElementById("important_feedback");
-		$('#important_feedback').animate({opacity: 0}, 1000 );
-		feedbackOverlay.className = "feedback-overlay hidden";
-	}
-
-	$('#clearFeedback').click(function(){
-		console.log("click!");
-		document.getElementById("feedback").innerHTML = "feedback..";
+	$('#clearFeedback').click(function () {
+		document.getElementById("feedback").innerHTML = "awaiting feedback..";
 	});
 
 	/**
@@ -238,9 +271,6 @@ echo $this->Rms->tf(
 			segmentClient.callService(request, function (result) {
 			});
 		}
-		else {
-			console.log("disabled!");
-		}
 	};
 	document.getElementById('ready').onclick = function () {
 		var goal = new ROSLIB.Goal({
@@ -253,9 +283,6 @@ echo $this->Rms->tf(
 		if (enabled) {
 			goal.send();
 			console.log("readying...");
-		}
-		else {
-			console.log("disabled!");
 		}
 	};
 	document.getElementById('retract').onclick = function () {
@@ -277,9 +304,6 @@ echo $this->Rms->tf(
 		if (enabled) {
 			goal.send();
 			console.log("retracting...");
-		}
-		else {
-			console.log("disabled!");
 		}
 
 	};
@@ -354,17 +378,7 @@ foreach ($environment['Urdf'] as $urdf) {
 		}
 	}
 
-	var body = document.getElementsByTagName('body')[0];
-	body.addEventListener('keydown', function (e) {
-// arrow keys
-		if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-			e.preventDefault();
-		}
-		handleKey(e.keyCode, true);
-	}, false);
-	body.addEventListener('keyup', function (e) {
-		handleKey(e.keyCode, false);
-	}, false);
+
 </script>
 
 <script>
@@ -380,8 +394,8 @@ foreach ($environment['Urdf'] as $urdf) {
 </script>
 
 <script>
-/**
-* Read the feedback from the action request and make it show!
-*/
+	/**
+	 * Read the feedback from the action request and make it show!
+	 */
 
 </script>
