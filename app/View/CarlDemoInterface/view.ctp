@@ -41,11 +41,11 @@ echo $this->Rms->tf(
 				</div>
 			</div>
 		</section>
-		<div class='row' id="main_content">
-			<div id="important_feedback" class='feedback-overlay hidden'>
+		<div class='row' id='main_content'>
+			<div id='important_feedback' class='feedback-overlay hidden'>
 				<h1>ERROR: ...</h1>
 			</div>
-			<div id="fatal_feedback" class='feedback-overlay fatal hidden'>
+			<div id='fatal_feedback' class='feedback-overlay fatal hidden'>
 				<h1>FATAL ERROR: ...</h1>
 			</div>
 			<div class='6u'>
@@ -75,13 +75,27 @@ echo $this->Rms->tf(
 			</section>
 			<section class='4u'>
 				<div id='feedback'>
-					feedback...
 				</div>
-				<button id="clearFeedback" class="button special">clear</button>
+				<button id='clearFeedback' class='button special'>clear</button>
 			</section>
 		</div>
 	</div>
 </section>
+
+
+<script>
+	var armClient = new ROSLIB.ActionClient({
+		ros: _ROS,
+		serverName: 'carl_moveit_wrapper/common_actions/arm_action',
+		actionName: 'carl_moveit/ArmAction'
+	});
+
+	var segmentClient = new ROSLIB.Service({
+		ros: _ROS,
+		name: '/rail_segmentation/segment',
+		serviceType: 'std_srvs/Empty'
+	});
+</script>
 
 <script>
 	var enabled = false;
@@ -97,49 +111,78 @@ echo $this->Rms->tf(
 			}
 		?>
 	});
-
 	/*
 	 * notify user if I receive a now_active message
+	 * This method is called once when you're first enabled
+	 * for a method called continuously, use on "enabled"
+	 * When this is called, add all the control elements to the interface.
+	 * This includes interactive markers, keyboard controls, and button controls
 	 * @param message Int32 message, the id of the user to remove
 	 */
-	rosQueue.on("enabled", function () {
-		document.getElementById("queueStatus").innerHTML = "robot active, begin your control";
-		document.getElementById('segment').className = "button fit special";
-		document.getElementById('ready').className = "button fit special";
-		document.getElementById('retract').className = "button fit special";
+	rosQueue.on('first_enabled', function () {
+		$('#queueStatus').html('robot active, begin your control');
+		$('#segment').addClass('special');
+		$('#ready').addClass('special');
+		$('#retract').addClass('special');
 
 		//keyboard tele-op
-		if (typeof _TELEOP == 'undefined') {
-			_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: "/cmd_vel_safe"});
-			_TELEOP.throttle = 0.800000;
-		}
+		_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: '/cmd_vel_safe'});
+		_TELEOP.throttle = 0.800000;
 
-		// Interactive Markers
-		if (typeof _IM == 'undefined') {
-			_IM = new ROS3D.InteractiveMarkerClient({
-				ros: _ROS,
-				tfClient: _TF,
-				camera: _VIEWER.camera,
-				rootObject: _VIEWER.selectableObjects,
-				loader: 1,
-				path: "http://resources.robotwebtools.org/",
-				topic: "/carl_interactive_manipulation"
-			});
-		}
-		if (typeof _PARKING_MARKERS == 'undefined') {
-			_PARKING_MARKERS = new ROS3D.InteractiveMarkerClient({
-				ros: _ROS,
-				tfClient: _TF,
-				camera: _VIEWER.camera,
-				rootObject: _VIEWER.selectableObjects,
-				topic: "/parking_markers"
-			});
-		}
+		// Interactive Markers for parking and carl's hand
+		_IM = new ROS3D.InteractiveMarkerClient({
+			ros: _ROS,
+			tfClient: _TF,
+			camera: _VIEWER.camera,
+			rootObject: _VIEWER.selectableObjects,
+			loader: 1,
+			path: 'http://resources.robotwebtools.org/',
+			topic: '/carl_interactive_manipulation'
+		});
 
-		var body = document.getElementsByTagName('body')[0];
+		_PARKING_MARKERS = new ROS3D.InteractiveMarkerClient({
+			ros: _ROS,
+			tfClient: _TF,
+			camera: _VIEWER.camera,
+			rootObject: _VIEWER.selectableObjects,
+			topic: '/parking_markers'
+		});
+
+		//create the callbacks for the segment/ready/retract buttons
+		$('#segment').click(function (e) {
+			e.preventDefault();
+			console.log("segmenting");
+			var request = new ROSLIB.ServiceRequest({});
+			segmentClient.callService(request, function (result) {
+			});
+		});
+		$('#ready').click(function (e) {
+			console.log('readying...');
+			e.preventDefault();
+			var goal = new ROSLIB.Goal({
+				actionClient: armClient,
+				goalMessage: {
+					action: 0
+				}
+			});
+			goal.send();
+		});
+		$('#retract').click(function (e) {
+			console.log('retracting...');
+			e.preventDefault();
+			var goal = new ROSLIB.Goal({
+				actionClient: armClient,
+				goalMessage: {
+					action: 1
+				}
+			});
+			goal.send();
+		});
+
 		/** arrow keys
 		 * on key up and key down send commands to drive or tilt camera
 		 */
+		var body = document.getElementsByTagName('body')[0];
 		body.addEventListener('keydown', function (e) {
 			if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
 				e.preventDefault();
@@ -157,30 +200,31 @@ echo $this->Rms->tf(
 	 * when I receive a new time update the interface
 	 * @param data objected with time in min & sec
 	 */
-	rosQueue.on("wait_time", setTime);
+	rosQueue.on('wait_time', setTime);
 	function setTime(data) {
 		var d = new Date();
 		d.setSeconds(data.sec);
 		d.setMinutes(data.min);
 		//substring removes hours and AM/PM
-		document.getElementById("queueStatus").innerHTML = "Your waiting time is " + d.toLocaleTimeString().substring(2, 8);
+		document.getElementById('queueStatus').innerHTML = 'Your waiting time is ' + d.toLocaleTimeString().substring(2, 8);
 	}
+
 	/*
 	 * notify user if I receive a pop_front message
 	 * @param message Int32 message, the id of the user to remove
 	 */
-	rosQueue.on("disabled", function () {
+	rosQueue.on('disabled', function () {
 		enabled = false;
-		document.getElementById('segment').className = "button fit";
-		document.getElementById('ready').className = "button fit";
-		document.getElementById('retract').className = "button fit";
+		document.getElementById('segment').className = 'button fit';
+		document.getElementById('ready').className = 'button fit';
+		document.getElementById('retract').className = 'button fit';
 
 	});
 
 	/**
 	 * whne the user is dequeued, force refresh the page. This will add them at the end of the queue and end all controls
 	 */
-	 rosQueue.on("dequeue", function () {
+	 rosQueue.on('dequeue', function () {
 		location.reload();
 	});
 
@@ -206,35 +250,35 @@ echo $this->Rms->tf(
 
 	feedback.subscribe(function (message) {
 		console.log(message);
-		var feedback = document.getElementById("feedback");
-		var feedbackOverlay = document.getElementById("important_feedback");
-		var fatalFeedbackOverlay = document.getElementById("fatal_feedback");
+		var feedback = document.getElementById('feedback');
+		var feedbackOverlay = document.getElementById('important_feedback');
+		var fatalFeedbackOverlay = document.getElementById('fatal_feedback');
 
 		switch (message.severity) {
 			case 2:
 				if (message.resolved) {
-					fatalFeedbackOverlay.className = "feedback-overlay fatal hidden";
-					feedbackOverlay.className = "feedback-overlay hidden";
+					fatalFeedbackOverlay.className = 'feedback-overlay fatal hidden';
+					feedbackOverlay.className = 'feedback-overlay hidden';
 				}
 				else {
-					fatalFeedbackOverlay.className = "feedback-overlay fatal";
+					fatalFeedbackOverlay.className = 'feedback-overlay fatal';
 					fatalFeedbackOverlay.innerHTML = message.message;
 				}
 				break;
 
 			case 1:
 				if (message.resolved) {
-					feedbackOverlay.className = "feedback-overlay hidden";
+					feedbackOverlay.className = 'feedback-overlay hidden';
 				}
 				else {
-					feedbackOverlay.className = "feedback-overlay";
+					feedbackOverlay.className = 'feedback-overlay';
 					feedbackOverlay.innerHTML = message.message;
 				}
 				break;
 
 			case 0:
 				feedback.innerHTML += message.message;
-				feedback.innerHTML += "<br/>";
+				feedback.innerHTML += '<br/><br/>';
 				//this will keep the div scrolled to the bottom
 				feedback.scrollTop = feedback.scrollHeight;
 		}
@@ -242,71 +286,13 @@ echo $this->Rms->tf(
 	});
 
 	$('#clearFeedback').click(function () {
-		document.getElementById("feedback").innerHTML = "awaiting feedback..";
+		document.getElementById('feedback').innerHTML = 'awaiting feedback..';
 	});
 
 	/**
 	 * Add me when I first visit the site
 	 */
 	rosQueue.enqueue();
-</script>
-
-<script>
-	var armClient = new ROSLIB.ActionClient({
-		ros: _ROS,
-		serverName: 'carl_moveit_wrapper/common_actions/ready_arm',
-		actionName: 'wpi_jaco_msgs/HomeArmAction'
-	});
-
-	var segmentClient = new ROSLIB.Service({
-		ros: _ROS,
-		name: '/rail_segmentation/segment_auto',
-		serviceType: 'std_srvs/Empty'
-	});
-
-	document.getElementById('segment').onclick = function () {
-		var request = new ROSLIB.ServiceRequest({});
-
-		if (enabled) {
-			segmentClient.callService(request, function (result) {
-			});
-		}
-	};
-	document.getElementById('ready').onclick = function () {
-		var goal = new ROSLIB.Goal({
-			actionClient: armClient,
-			goalMessage: {
-				retract: false
-			}
-		});
-
-		if (enabled) {
-			goal.send();
-			console.log("readying...");
-		}
-	};
-	document.getElementById('retract').onclick = function () {
-		var goal = new ROSLIB.Goal({
-			actionClient: armClient,
-			goalMessage: {
-				retract: true,
-				retractPosition: {
-					position: true,
-					armCommand: true,
-					fingerCommand: false,
-					repeat: false,
-					joints: [-2.57, 1.39, 0.527, -.084, .515, -1.745]
-				},
-				numAttempts: 3
-			}
-		});
-
-		if (enabled) {
-			goal.send();
-			console.log("retracting...");
-		}
-
-	};
 </script>
 
 <script>

@@ -31,11 +31,12 @@
 	text-align: left;
 	padding: 4px;
 	font-size: 14px;
+	line-height: 1em;
 }
 
 .feedback-overlay {
 	background-color: #ed6d13;
-	margin-left:-20px;
+	margin-left:-10px;
 	padding:10px;
 	color: #ffffff;
 	position: absolute;
