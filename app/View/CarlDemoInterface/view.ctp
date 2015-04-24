@@ -41,6 +41,17 @@ echo $this->Rms->tf(
 				</div>
 			</div>
 		</section>
+		<div class="overlay hidden" id='tutorial'>
+			<div class="highlight hidden"  id="urdf_highlight">
+				control the robot's arm here
+			</div>
+			<div class="highlight hidden"  id="keyboard_highlight">
+				Drive the robot with the <strong>W, A, S, D</strong> keys
+			</div>
+			<div class="highlight hidden" id="feedback_highlight">
+				Feedback may appear if something goes wrong
+			</div>
+		</div>
 		<div class='row' id='main_content'>
 			<div id='important_feedback' class='feedback-overlay hidden'>
 				<h1>ERROR: ...</h1>
@@ -98,6 +109,47 @@ echo $this->Rms->tf(
 </script>
 
 <script>
+	/** display tutorial information as overlays with timeouts */
+	var tutorial_hl = $("#tutorial");
+	var urdf_hl = $("#urdf_highlight");
+	var feedback_hl = $("#feedback_highlight");
+	var keyboard_hl = $("#keyboard_highlight");
+
+
+	setTimeout(urdf_tutorial,500);
+
+	function urdf_tutorial() {
+		tutorial_hl.animate({opacity:0.7});
+		urdf_hl.animate({opacity:1.0});;
+		setTimeout(feedback_tutorial,2500);
+	}
+
+	function feedback_tutorial() {
+		urdf_hl.fadeOut();
+		$("#fatal_feedback").animate({opacity:1.0});
+		$("#important_feedback").animate({opacity:1.0});
+		feedback_hl.animate({opacity:1.0});;
+		setTimeout(keyboard_tutorial,2500);
+	}
+
+	function keyboard_tutorial() {
+		feedback_hl.fadeOut();
+		$("#fatal_feedback").removeAttr('style');
+		$("#important_feedback").removeAttr('style');
+		keyboard_hl.animate({opacity:1.0});;
+		setTimeout(closeTutorial,2500);
+	}
+
+	function closeTutorial(){
+		tutorial_hl.fadeOut();
+		urdf_hl.fadeOut();
+		feedback_hl.fadeOut();
+		keyboard_hl.fadeOut();
+	}
+
+</script>
+
+<script>
 	var enabled = false;
 	var rosQueue = new ROSQUEUE.Queue({
 		ros: _ROS,
@@ -111,6 +163,7 @@ echo $this->Rms->tf(
 			}
 		?>
 	});
+
 	/*
 	 * notify user if I receive a now_active message
 	 * This method is called once when you're first enabled
@@ -377,11 +430,4 @@ foreach ($environment['Urdf'] as $urdf) {
 		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
 		labels: ['First Person', 'Sink', 'Coffee Table']
 	});
-</script>
-
-<script>
-	/**
-	 * Read the feedback from the action request and make it show!
-	 */
-
 </script>
