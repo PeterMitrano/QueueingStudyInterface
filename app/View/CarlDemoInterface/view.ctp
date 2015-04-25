@@ -37,20 +37,35 @@ echo $this->Rms->tf(
 		<section>
 			<div class='row'>
 				<div class='12u'>
-					<h3 id='queueStatus'>Queue Status...</h3>
+					<h3 id='queueStatus'></h3>
 				</div>
 			</div>
 		</section>
-		<div class="overlay hidden" id='tutorial'>
-			<div class="highlight hidden" id="urdf_highlight">
-				control the robot's arm here
+		<div class='overlay hidden' id='tutorial'>
+			<div class='highlight' id='welcome_highlight'>
+				<strong>
+					Welcome! Press next to proceed to the next instruction.
+				</strong>
 			</div>
-			<div class="highlight hidden" id="keyboard_highlight">
+			<div class='highlight' id='urdf_highlight'>
+				control the robot's arm by dragging the arrows, or spinning the rings.
+				<br/>
+				Click on the green markers to drive to fixed locations.
+			</div>
+			<div class='highlight' id='buttons_highlight'>
+				Clicking these buttons will control the arm.
+				<br/>
+				Segment will look for objects and add them to the 3D world.
+			</div>
+			<div class='highlight' id='keyboard_highlight'>
 				Drive the robot with the <strong>W, A, S, D</strong> keys
+				<br/>
+				Tilt the camera with <strong>Up</strong> and <strong>Down</strong> keys
 			</div>
-			<div class="highlight hidden" id="feedback_highlight">
+			<div class='highlight' id='feedback_highlight'>
 				Feedback may appear if something goes wrong
 			</div>
+			<button id='next' class='button'>Next</button>
 		</div>
 		<div class='row' id='main_content'>
 			<div id='important_feedback' class='feedback-overlay hidden'>
@@ -60,7 +75,7 @@ echo $this->Rms->tf(
 				<h1>FATAL ERROR: ...</h1>
 			</div>
 			<div class='6u'>
-				<div id="viewer">
+				<div id='viewer'>
 				</div>
 			</div>
 			<div class='6u stream'>
@@ -93,12 +108,12 @@ echo $this->Rms->tf(
 </section>
 
 <script>
-	var s = Math.min(((window.innerWidth / 2) - 120), window.innerHeight * 0.60);
+	_S = Math.min(((window.innerWidth / 2) - 120), window.innerHeight * 0.60);
 	new MJPEGCANVAS.MultiStreamViewer({
 		divID: 'mjpeg',
 		host: 'carl-bot',
-		width: s,
-		height: s * 0.85,
+		width: _S,
+		height: _S * 0.85,
 		quality: 60,
 		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
 		labels: ['First Person', 'Sink', 'Coffee Table']
@@ -106,11 +121,11 @@ echo $this->Rms->tf(
 
 
 	_VIEWER = new ROS3D.Viewer({
-		divID: "viewer",
-		width: s,
-		height: s * 0.85,
+		divID: 'viewer',
+		width: _S,
+		height: _S * 0.85,
 		antialias: true,
-		background: "#50817b",
+		background: '#50817b',
 		intensity: 0.660000
 	});
 </script>
@@ -131,77 +146,21 @@ echo $this->Rms->tf(
 
 <script>
 	/** display tutorial information as overlays with timeouts */
-	var tutorial_hl = $("#tutorial");
-	var urdf_hl = $("#urdf_highlight");
-	var feedback_hl = $("#feedback_highlight");
-	var keyboard_hl = $("#keyboard_highlight");
+	var tutorial_hl = $('#tutorial');
+	var welcome_hl = $('#welcome_highlight');
+	var urdf_hl = $('#urdf_highlight');
+	var buttons_hl = $('#buttons_highlight');
+	var feedback_hl = $('#feedback_highlight');
+	var keyboard_hl = $('#keyboard_highlight');
 
-
-	//setTimeout(urdf_tutorial,500);
+	function tutorial(){
+		tutorial_hl.animate({opacity: 0.8},2000);
+		welcome_hl.fadeIn('slow');
+		$("#next").fadeIn('slow');
+	}
 
 	function urdf_tutorial() {
-		tutorial_hl.animate({opacity: 0.7});
-		urdf_hl.animate({opacity: 1.0});
-		setTimeout(feedback_tutorial, 2500);
-	}
-
-	function feedback_tutorial() {
-		urdf_hl.fadeOut();
-		$("#fatal_feedback").animate({opacity: 1.0});
-		$("#important_feedback").animate({opacity: 1.0});
-		feedback_hl.animate({opacity: 1.0});
-		setTimeout(keyboard_tutorial, 2500);
-	}
-
-	function keyboard_tutorial() {
-		feedback_hl.fadeOut();
-		$("#fatal_feedback").removeAttr('style');
-		$("#important_feedback").removeAttr('style');
-		keyboard_hl.animate({opacity: 1.0});
-		setTimeout(closeTutorial, 2500);
-	}
-
-	function closeTutorial() {
-		tutorial_hl.fadeOut();
-		urdf_hl.fadeOut();
-		feedback_hl.fadeOut();
-		keyboard_hl.fadeOut();
-	}
-
-</script>
-
-<script>
-	var enabled = false;
-	var rosQueue = new ROSQUEUE.Queue({
-		ros: _ROS,
-		studyTime: 1,
-		userId: <?php
-			if (isset($appointment['Appointment']['user_id'])){
-				echo $appointment['Appointment']['user_id'];
-			}
-			else {
-				echo -1;
-			}
-		?>
-	});
-
-	/*
-	 * notify user if I receive a now_active message
-	 * This method is called once when you're first enabled
-	 * for a method called continuously, use on "enabled"
-	 * When this is called, add all the control elements to the interface.
-	 * This includes interactive markers, keyboard controls, and button controls
-	 * @param message Int32 message, the id of the user to remove
-	 */
-	rosQueue.on('first_enabled', function () {
-		$('#queueStatus').html('robot active, begin your control');
-		$('#segment').addClass('special');
-		$('#ready').addClass('special');
-		$('#retract').addClass('special');
-
-		//keyboard tele-op
-		_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: '/cmd_vel_safe'});
-		_TELEOP.throttle = 0.800000;
+		urdf_hl.fadeIn('slow');
 
 		// Interactive Markers for parking and carl's hand
 		_IM = new ROS3D.InteractiveMarkerClient({
@@ -213,7 +172,6 @@ echo $this->Rms->tf(
 			path: 'http://resources.robotwebtools.org/',
 			topic: '/carl_interactive_manipulation'
 		});
-
 		_PARKING_MARKERS = new ROS3D.InteractiveMarkerClient({
 			ros: _ROS,
 			tfClient: _TF,
@@ -221,11 +179,18 @@ echo $this->Rms->tf(
 			rootObject: _VIEWER.selectableObjects,
 			topic: '/parking_markers'
 		});
+	}
 
+	function buttons_tutorial(){
+		urdf_hl.fadeOut('slow');
+		buttons_hl.fadeIn('slow');
+		$('#segment').addClass('special');
+		$('#ready').addClass('special');
+		$('#retract').addClass('special');
 		//create the callbacks for the segment/ready/retract buttons
 		$('#segment').click(function (e) {
 			e.preventDefault();
-			console.log("segmenting");
+			console.log('segmenting');
 			var request = new ROSLIB.ServiceRequest({});
 			segmentClient.callService(request, function (result) {
 			});
@@ -252,6 +217,24 @@ echo $this->Rms->tf(
 			});
 			goal.send();
 		});
+	}
+
+	function feedback_tutorial() {
+		buttons_hl.fadeOut('slow');
+		feedback_hl.fadeIn('slow');
+		$('#fatal_feedback').fadeIn('slow');
+		$('#important_feedback').fadeIn('slow');
+	}
+
+	function keyboard_tutorial() {
+		$('#fatal_feedback').fadeOut('slow');
+		$('#important_feedback').fadeOut('slow');
+		feedback_hl.fadeOut('slow');
+		keyboard_hl.fadeIn('slow');
+
+		//keyboard tele-op
+		_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: '/cmd_vel_safe'});
+		_TELEOP.throttle = 0.800000;
 
 		/** arrow keys
 		 * on key up and key down send commands to drive or tilt camera
@@ -267,8 +250,74 @@ echo $this->Rms->tf(
 			handleKey(e.keyCode, false);
 		}, false);
 
-		enabled = true;
+	}
+
+	function closeTutorial() {
+		tutorial_hl.fadeOut();
+		urdf_hl.fadeOut();
+		feedback_hl.fadeOut();
+		keyboard_hl.fadeOut();
+		initiateControl();
+	}
+
+
+
+	var step = 0;
+	$("#next").click(function (){
+		switch(step){
+			case 0:
+				urdf_tutorial();
+				break;
+			case 1:
+				buttons_tutorial();
+				break;
+			case 2:
+				feedback_tutorial();
+				break;
+			case 3:
+				keyboard_tutorial();
+				break;
+			case 4:
+				closeTutorial();
+				break;
+		}
+		step++;
 	});
+
+</script>
+
+<script>
+	var enabled = false;
+	var rosQueue = new ROSQUEUE.Queue({
+		ros: _ROS,
+		studyTime: 10,
+		userId: <?php
+			if (isset($appointment['Appointment']['user_id'])){
+				echo $appointment['Appointment']['user_id'];
+			}
+			else {
+				echo -1;
+			}
+		?>
+	});
+
+	/*
+	 * notify user if I receive a now_active message
+	 * This method is called once when you're first enabled
+	 * for a method called continuously, use on 'enabled'
+	 * When this is called, add all the control elements to the interface.
+	 * This includes interactive markers, keyboard controls, and button controls
+	 * @param message Int32 message, the id of the user to remove
+	 */
+	rosQueue.on('first_enabled', function () {
+		//begin the tutorial!!!
+		setTimeout(tutorial, 500);
+	});
+
+	function initiateControl() {
+		$('#queueStatus').html('robot active, begin your control');
+		enabled = true;
+	}
 
 	/**
 	 * when I receive a new time update the interface
