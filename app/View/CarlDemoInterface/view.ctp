@@ -60,41 +60,60 @@ echo $this->Rms->tf(
 				<h1>FATAL ERROR: ...</h1>
 			</div>
 			<div class='6u'>
-				<div id="viewer"></div>
+				<div id="viewer">
+				</div>
 			</div>
-
+			<div class='6u stream'>
+				<div id='mjpeg'>
+				</div>
+			</div>
 		</div>
-		<div class='6u stream'>
-			<div id='mjpeg'>
-			</div>
+		<div class='row'>
+			<section class='4u'>
+				<a href='#' class='button fit' id='segment'>Segment</a>
+				<br/>
+				<a href='#' class='button fit' id='ready'>Ready Arm</a>
+				<br/>
+				<a href='#' class='button fit' id='retract'>Retract Arm</a>
+			</section>
+			<section class='4u'>
+				Use the <strong>W, A, S, D</strong> keys to drive the robot. Use the <strong>arrow keys</strong> to
+				move the camera.Use the <strong>3D interface</strong> to control the arm. Right clicking the gripper
+				will
+				provide additional
+				actions.
+			</section>
+			<section class='4u'>
+				<div id='feedback'>
+				</div>
+				<button id='clearFeedback' class='button special'>clear</button>
+			</section>
 		</div>
-	</div>
-	<div class='row'>
-		<section class='4u'>
-			<a href='#' class='button fit' id='segment'>Segment</a>
-			<br/>
-			<a href='#' class='button fit' id='ready'>Ready Arm</a>
-			<br/>
-			<a href='#' class='button fit' id='retract'>Retract Arm</a>
-		</section>
-		<section class='4u'>
-			<br/>
-			Use the <strong>W, A, S, D</strong> keys to drive the robot. Use the <strong>arrow keys</strong> to
-			move the camera.Use the <strong>3D interface</strong> to control the arm. Right clicking the gripper
-			will
-			provide additional
-			actions.
-			<br/>
-		</section>
-		<section class='4u'>
-			<div id='feedback'>
-			</div>
-			<button id='clearFeedback' class='button special'>clear</button>
-		</section>
-	</div>
 	</div>
 </section>
 
+<script>
+	var s = Math.min(((window.innerWidth / 2) - 120), window.innerHeight * 0.60);
+	new MJPEGCANVAS.MultiStreamViewer({
+		divID: 'mjpeg',
+		host: 'carl-bot',
+		width: s,
+		height: s * 0.85,
+		quality: 60,
+		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
+		labels: ['First Person', 'Sink', 'Coffee Table']
+	});
+
+
+	_VIEWER = new ROS3D.Viewer({
+		divID: "viewer",
+		width: s,
+		height: s * 0.85,
+		antialias: true,
+		background: "#50817b",
+		intensity: 0.660000
+	});
+</script>
 
 <script>
 	var armClient = new ROSLIB.ActionClient({
@@ -420,33 +439,4 @@ foreach ($environment['Urdf'] as $urdf) {
 	}
 
 
-</script>
-
-<script>
-	var mjpeg = $("#mjpeg");
-	var viewer = $("#viewer");
-
-	var viewerPadding = viewer.outerWidth() - viewer.width();
-	var mjpegPadding = mjpeg.outerWidth() - mjpeg.width();
-
-	var s = (window.innerWidth / 2) - 2 * (mjpegPadding + viewerPadding);
-
-	new MJPEGCANVAS.MultiStreamViewer({
-		divID: 'mjpeg',
-		host: 'carl-bot',
-		width: s,
-		height: s * 0.75,
-		quality: 60,
-		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
-		labels: ['First Person', 'Sink', 'Coffee Table']
-	});
-
-	VIEWER = new ROS3D.Viewer({
-		divID: "viewer",
-		width: s,
-		height: s * 0.75,
-		antialias: true,
-		background: "#7498db",
-		intensity: 0.66
-	});
 </script>
