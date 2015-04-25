@@ -7,6 +7,14 @@
 	margin-top:-20px;
 }
 
+#mjpeg {
+	padding: 10px;
+}
+
+#viewer{
+	padding: 10px;
+}
+
 #important_feedback {
 	font-size: 26px;
 	text-transform: uppercase;

@@ -42,10 +42,10 @@ echo $this->Rms->tf(
 			</div>
 		</section>
 		<div class="overlay hidden" id='tutorial'>
-			<div class="highlight hidden"  id="urdf_highlight">
+			<div class="highlight hidden" id="urdf_highlight">
 				control the robot's arm here
 			</div>
-			<div class="highlight hidden"  id="keyboard_highlight">
+			<div class="highlight hidden" id="keyboard_highlight">
 				Drive the robot with the <strong>W, A, S, D</strong> keys
 			</div>
 			<div class="highlight hidden" id="feedback_highlight">
@@ -60,36 +60,38 @@ echo $this->Rms->tf(
 				<h1>FATAL ERROR: ...</h1>
 			</div>
 			<div class='6u'>
-				<?php echo $this->Rms->ros3d('#50817b', 0.66, 0.75); ?>
+				<div id="viewer"></div>
 			</div>
-			<div class='6u stream'>
-				<div id='mjpeg'>
-				</div>
+
+		</div>
+		<div class='6u stream'>
+			<div id='mjpeg'>
 			</div>
 		</div>
-		<div class='row'>
-			<section class='4u'>
-				<a href='#' class='button fit' id='segment'>Segment</a>
-				<br/>
-				<a href='#' class='button fit' id='ready'>Ready Arm</a>
-				<br/>
-				<a href='#' class='button fit' id='retract'>Retract Arm</a>
-			</section>
-			<section class='4u'>
-				<br/>
-				Use the <strong>W, A, S, D</strong> keys to drive the robot. Use the <strong>arrow keys</strong> to
-				move the camera.Use the <strong>3D interface</strong> to control the arm. Right clicking the gripper
-				will
-				provide additional
-				actions.
-				<br/>
-			</section>
-			<section class='4u'>
-				<div id='feedback'>
-				</div>
-				<button id='clearFeedback' class='button special'>clear</button>
-			</section>
-		</div>
+	</div>
+	<div class='row'>
+		<section class='4u'>
+			<a href='#' class='button fit' id='segment'>Segment</a>
+			<br/>
+			<a href='#' class='button fit' id='ready'>Ready Arm</a>
+			<br/>
+			<a href='#' class='button fit' id='retract'>Retract Arm</a>
+		</section>
+		<section class='4u'>
+			<br/>
+			Use the <strong>W, A, S, D</strong> keys to drive the robot. Use the <strong>arrow keys</strong> to
+			move the camera.Use the <strong>3D interface</strong> to control the arm. Right clicking the gripper
+			will
+			provide additional
+			actions.
+			<br/>
+		</section>
+		<section class='4u'>
+			<div id='feedback'>
+			</div>
+			<button id='clearFeedback' class='button special'>clear</button>
+		</section>
+	</div>
 	</div>
 </section>
 
@@ -116,31 +118,31 @@ echo $this->Rms->tf(
 	var keyboard_hl = $("#keyboard_highlight");
 
 
-	setTimeout(urdf_tutorial,500);
+	//setTimeout(urdf_tutorial,500);
 
 	function urdf_tutorial() {
-		tutorial_hl.animate({opacity:0.7});
-		urdf_hl.animate({opacity:1.0});;
-		setTimeout(feedback_tutorial,2500);
+		tutorial_hl.animate({opacity: 0.7});
+		urdf_hl.animate({opacity: 1.0});
+		setTimeout(feedback_tutorial, 2500);
 	}
 
 	function feedback_tutorial() {
 		urdf_hl.fadeOut();
-		$("#fatal_feedback").animate({opacity:1.0});
-		$("#important_feedback").animate({opacity:1.0});
-		feedback_hl.animate({opacity:1.0});;
-		setTimeout(keyboard_tutorial,2500);
+		$("#fatal_feedback").animate({opacity: 1.0});
+		$("#important_feedback").animate({opacity: 1.0});
+		feedback_hl.animate({opacity: 1.0});
+		setTimeout(keyboard_tutorial, 2500);
 	}
 
 	function keyboard_tutorial() {
 		feedback_hl.fadeOut();
 		$("#fatal_feedback").removeAttr('style');
 		$("#important_feedback").removeAttr('style');
-		keyboard_hl.animate({opacity:1.0});;
-		setTimeout(closeTutorial,2500);
+		keyboard_hl.animate({opacity: 1.0});
+		setTimeout(closeTutorial, 2500);
 	}
 
-	function closeTutorial(){
+	function closeTutorial() {
 		tutorial_hl.fadeOut();
 		urdf_hl.fadeOut();
 		feedback_hl.fadeOut();
@@ -277,7 +279,7 @@ echo $this->Rms->tf(
 	/**
 	 * whne the user is dequeued, force refresh the page. This will add them at the end of the queue and end all controls
 	 */
-	 rosQueue.on('dequeue', function () {
+	rosQueue.on('dequeue', function () {
 		location.reload();
 	});
 
@@ -421,13 +423,30 @@ foreach ($environment['Urdf'] as $urdf) {
 </script>
 
 <script>
+	var mjpeg = $("#mjpeg");
+	var viewer = $("#viewer");
+
+	var viewerPadding = viewer.outerWidth() - viewer.width();
+	var mjpegPadding = mjpeg.outerWidth() - mjpeg.width();
+
+	var s = (window.innerWidth / 2) - 2 * (mjpegPadding + viewerPadding);
+
 	new MJPEGCANVAS.MultiStreamViewer({
 		divID: 'mjpeg',
 		host: 'carl-bot',
-		width: 480,
-		height: 430,
-		quality: 20,
+		width: s,
+		height: s * 0.75,
+		quality: 60,
 		topics: ['/camera/rgb/image_raw', '/sink_camera/rgb/image_raw', '/coffee_table_camera/rgb/image_raw'],
 		labels: ['First Person', 'Sink', 'Coffee Table']
+	});
+
+	VIEWER = new ROS3D.Viewer({
+		divID: "viewer",
+		width: s,
+		height: s * 0.75,
+		antialias: true,
+		background: "#7498db",
+		intensity: 0.66
 	});
 </script>
