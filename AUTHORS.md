@@ -5,3 +5,5 @@ Original Authors
 
 Contributors
 ------------
+
+ * [Peter Mitrano](https://petermitrano.github.io) (robotwizard@wpi.edu)
