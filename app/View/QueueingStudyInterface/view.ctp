@@ -159,6 +159,12 @@ echo $this->Rms->tf(
 	}
 
 	function urdf_tutorial() {
+		//move overlay up so it doesn't cover up the marker
+		$("#tutorial").css("height","20%");
+
+		//highlight the marker
+		//?????
+
 		urdf_hl.fadeIn('slow');
 
 		// Interactive Markers for parking and carl's hand
@@ -219,6 +225,9 @@ echo $this->Rms->tf(
 	}
 
 	function feedback_tutorial() {
+		//move overlay down to cover lower text
+		$("#tutorial").css("height","35%");
+
 		buttons_hl.fadeOut('slow');
 		feedback_hl.fadeIn('slow');
 		$('#fatal_feedback').fadeIn('slow');
@@ -226,6 +235,8 @@ echo $this->Rms->tf(
 	}
 
 	function keyboard_tutorial() {
+		//move overlay back up since text is higher
+		$("#tutorial").css("height","20%");
 		$('#fatal_feedback').fadeOut('slow');
 		$('#important_feedback').fadeOut('slow');
 		feedback_hl.fadeOut('slow');
@@ -257,6 +268,7 @@ echo $this->Rms->tf(
 		feedback_hl.fadeOut();
 		keyboard_hl.fadeOut();
 		initiateControl();
+		step=0;
 	}
 
 
