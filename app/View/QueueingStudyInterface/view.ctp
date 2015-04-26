@@ -5,6 +5,7 @@
  * The Queueing Study interface controller. This interface will allow for navigation and manipulation controls.
  *
  * @author		Russell Toris - rctoris@wpi.edu
+ * @author		Peter Mitrano - robotwizard@wpi.edu*
  * @copyright	2014 Worcester Polytechnic Institute
  * @link		https://github.com/petermitrano/QueueingStudyInterface
  * @since		QueueingStudyInterface v 0.0.1
@@ -29,6 +30,17 @@ echo $this->Rms->tf(
 	$environment['Tf']['translational'],
 	$environment['Tf']['rate']
 );
+?>
+
+<?php
+// URDF
+foreach ($environment['Urdf'] as $urdf) {
+	echo $this->Rms->urdf(
+		$urdf['param'],
+		$urdf['Collada']['id'],
+		$urdf['Resource']['url']
+	);
+}
 ?>
 
 <section class='wrapper style4'>
@@ -161,72 +173,19 @@ echo $this->Rms->tf(
 	function urdf_tutorial() {
 		//move overlay up so it doesn't cover up the marker
 		$("#tutorial").css("height","20%");
-
-		//highlight the marker
-		//?????
-
 		urdf_hl.fadeIn('slow');
-
-		// Interactive Markers for parking and carl's hand
-		_IM = new ROS3D.InteractiveMarkerClient({
-			ros: _ROS,
-			tfClient: _TF,
-			camera: _VIEWER.camera,
-			rootObject: _VIEWER.selectableObjects,
-			loader: 1,
-			path: 'http://resources.robotwebtools.org/',
-			topic: '/carl_interactive_manipulation'
-		});
-		_PARKING_MARKERS = new ROS3D.InteractiveMarkerClient({
-			ros: _ROS,
-			tfClient: _TF,
-			camera: _VIEWER.camera,
-			rootObject: _VIEWER.selectableObjects,
-			topic: '/parking_markers'
-		});
+		addInteractiveMarkers();
 	}
 
 	function buttons_tutorial(){
 		urdf_hl.fadeOut('slow');
 		buttons_hl.fadeIn('slow');
-		$('#segment').addClass('special');
-		$('#ready').addClass('special');
-		$('#retract').addClass('special');
-		//create the callbacks for the segment/ready/retract buttons
-		$('#segment').click(function (e) {
-			e.preventDefault();
-			console.log('segmenting');
-			var request = new ROSLIB.ServiceRequest({});
-			segmentClient.callService(request, function (result) {
-			});
-		});
-		$('#ready').click(function (e) {
-			console.log('readying...');
-			e.preventDefault();
-			var goal = new ROSLIB.Goal({
-				actionClient: armClient,
-				goalMessage: {
-					action: 0
-				}
-			});
-			goal.send();
-		});
-		$('#retract').click(function (e) {
-			console.log('retracting...');
-			e.preventDefault();
-			var goal = new ROSLIB.Goal({
-				actionClient: armClient,
-				goalMessage: {
-					action: 1
-				}
-			});
-			goal.send();
-		});
+		addButtons();
 	}
 
 	function feedback_tutorial() {
 		//move overlay down to cover lower text
-		$("#tutorial").css("height","35%");
+		$("#tutorial").css("height","31%");
 
 		buttons_hl.fadeOut('slow');
 		feedback_hl.fadeIn('slow');
@@ -237,29 +196,13 @@ echo $this->Rms->tf(
 	function keyboard_tutorial() {
 		//move overlay back up since text is higher
 		$("#tutorial").css("height","20%");
+
 		$('#fatal_feedback').fadeOut('slow');
 		$('#important_feedback').fadeOut('slow');
 		feedback_hl.fadeOut('slow');
 		keyboard_hl.fadeIn('slow');
 
-		//keyboard tele-op
-		_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: '/cmd_vel_safe'});
-		_TELEOP.throttle = 0.800000;
-
-		/** arrow keys
-		 * on key up and key down send commands to drive or tilt camera
-		 */
-		var body = document.getElementsByTagName('body')[0];
-		body.addEventListener('keydown', function (e) {
-			if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-				e.preventDefault();
-			}
-			handleKey(e.keyCode, true);
-		}, false);
-		body.addEventListener('keyup', function (e) {
-			handleKey(e.keyCode, false);
-		}, false);
-
+		addTeleop();
 	}
 
 	function closeTutorial() {
@@ -267,11 +210,12 @@ echo $this->Rms->tf(
 		urdf_hl.fadeOut();
 		feedback_hl.fadeOut();
 		keyboard_hl.fadeOut();
-		initiateControl();
+		$("#important_feedback").removeAttr('style');
+		$("#fatal_feedback").removeAttr('style');
+		$('#queueStatus').html('robot active, begin your control');
+		enabled = true;
 		step=0;
 	}
-
-
 
 	var step = 0;
 	$("#next").click(function (){
@@ -321,12 +265,27 @@ echo $this->Rms->tf(
 	 * @param message Int32 message, the id of the user to remove
 	 */
 	rosQueue.on('first_enabled', function () {
-		//begin the tutorial!!!
-		setTimeout(tutorial, 500);
+		//begin the tutorial if the user hasn't visited before
+		var has_visited = <?php echo $has_visited?>;
+		if (has_visited){
+			console.log("has visited, no tutorial");
+			noTutorial();
+		}
+		else {
+			console.log("new visitor, show tutorial!");
+			//slight pause helps with loading the webpage
+			setTimeout(tutorial, 1000);
+		}
 	});
 
-	function initiateControl() {
-		$('#queueStatus').html('robot active, begin your control');
+	/**
+	 * if the tutorial wasn't shown, you still need to add the control objects and enable the interface
+	 */
+	function noTutorial() {
+		addInteractiveMarkers();
+		addButtons();
+		addTeleop();
+		addQueueStatus();
 		enabled = true;
 	}
 
@@ -334,14 +293,13 @@ echo $this->Rms->tf(
 	 * when I receive a new time update the interface
 	 * @param data objected with time in min & sec
 	 */
-	rosQueue.on('wait_time', setTime);
-	function setTime(data) {
+	rosQueue.on('wait_time', function(data) {
 		var d = new Date();
 		d.setSeconds(data.sec);
 		d.setMinutes(data.min);
 		//substring removes hours and AM/PM
 		document.getElementById('queueStatus').innerHTML = 'Your waiting time is ' + d.toLocaleTimeString().substring(2, 8);
-	}
+	});
 
 	/*
 	 * notify user if I receive a pop_front message
@@ -430,6 +388,89 @@ echo $this->Rms->tf(
 </script>
 
 <script>
+	/** add elements to the interface to allow the user to control carl*/
+	function addTeleop(){
+		//keyboard tele-op
+		_TELEOP = new KEYBOARDTELEOP.Teleop({ros: _ROS, topic: '/cmd_vel_safe'});
+		_TELEOP.throttle = 0.800000;
+
+		/** arrow keys
+		 * on key up and key down send commands to drive or tilt camera
+		 */
+		var body = document.getElementsByTagName('body')[0];
+		body.addEventListener('keydown', function (e) {
+			if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+				e.preventDefault();
+			}
+			handleKey(e.keyCode, true);
+		}, false);
+		body.addEventListener('keyup', function (e) {
+			handleKey(e.keyCode, false);
+		}, false);
+	}
+
+	function addInteractiveMarkers(){
+		// Interactive Markers for parking and carl's hand
+		_IM = new ROS3D.InteractiveMarkerClient({
+			ros: _ROS,
+			tfClient: _TF,
+			camera: _VIEWER.camera,
+			rootObject: _VIEWER.selectableObjects,
+			loader: 1,
+			path: 'http://resources.robotwebtools.org/',
+			topic: '/carl_interactive_manipulation'
+		});
+		_PARKING_MARKERS = new ROS3D.InteractiveMarkerClient({
+			ros: _ROS,
+			tfClient: _TF,
+			camera: _VIEWER.camera,
+			rootObject: _VIEWER.selectableObjects,
+			topic: '/parking_markers'
+		});
+	}
+
+	function addButtons(){
+		$('#segment').addClass('special');
+		$('#ready').addClass('special');
+		$('#retract').addClass('special');
+		//create the callbacks for the segment/ready/retract buttons
+		$('#segment').click(function (e) {
+			e.preventDefault();
+			console.log('segmenting');
+			var request = new ROSLIB.ServiceRequest({});
+			segmentClient.callService(request, function (result) {
+			});
+		});
+		$('#ready').click(function (e) {
+			console.log('readying...');
+			e.preventDefault();
+			var goal = new ROSLIB.Goal({
+				actionClient: armClient,
+				goalMessage: {
+					action: 0
+				}
+			});
+			goal.send();
+		});
+		$('#retract').click(function (e) {
+			console.log('retracting...');
+			e.preventDefault();
+			var goal = new ROSLIB.Goal({
+				actionClient: armClient,
+				goalMessage: {
+					action: 1
+				}
+			});
+			goal.send();
+		});
+	}
+
+	function addQueueStatus(){
+		$('#queueStatus').html('robot active, begin your control');
+	}
+</script>
+
+<script>
 	_VIEWER.camera.position.x = 1.8;
 	_VIEWER.camera.position.y = 1.0;
 	_VIEWER.camera.position.z = 3.0;
@@ -445,16 +486,6 @@ echo $this->Rms->tf(
 		})
 	);
 </script>
-<?php
-// URDF
-foreach ($environment['Urdf'] as $urdf) {
-	echo $this->Rms->urdf(
-		$urdf['param'],
-		$urdf['Collada']['id'],
-		$urdf['Resource']['url']
-	);
-}
-?>
 
 <script>
 	// add camera controls
@@ -497,6 +528,4 @@ foreach ($environment['Urdf'] as $urdf) {
 				break;
 		}
 	}
-
-
 </script>

@@ -20,6 +20,19 @@ class QueueingStudyInterfaceController extends InterfaceController {
  *
  * @return null
  */
+	public $components = array('Cookie');
+
+	public function beforeFilter() {
+		parent::beforeFilter();
+		if ($this->Cookie->check('has_visited')){
+			$this->set('has_visited','true');
+		}
+		else {
+			$this->set('has_visited','false');
+			$this->Cookie->write('has_visited', '1');
+		}
+	}
+
 	public function view() {
 		// set the title of the HTML page
 		$this->set('title_for_layout', 'CARL (Crowdsourcing for Autonomous Robot Learning)');
