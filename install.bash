@@ -18,9 +18,9 @@ echo
 
 # check the directory we are working in
 DIR=`pwd`
-if [[ $DIR != *CarlDemoInterface ]]
+if [[ $DIR != *QueueingStudyInterface ]]
 then
-	echo "ERROR: Please run this script in the 'CarlDemoInterface' directory."
+	echo "ERROR: Please run this script in the 'QueueingStudyInterface' directory."
 	exit;
 fi
 

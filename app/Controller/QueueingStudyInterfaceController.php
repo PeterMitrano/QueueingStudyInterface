@@ -2,18 +2,18 @@
 App::uses('InterfaceController', 'Controller');
 
 /**
- * CARL Demo Interface Controller
+ * Queueing study Interface Controller
  *
- * The CARL demo interface controller. This interface will allow for navigation and manipulation controls.
+ * The Queueing Study interface controller. This interface will allow for navigation and manipulation controls.
  *
  * @author		Russell Toris - rctoris@wpi.edu
  * @copyright	2014 Worcester Polytechnic Institute
- * @link		https://github.com/WPI-RAIL/CarlDemoInterface
- * @since		CarlDemoInterface v 0.0.1
+ * @link		https://github.com/petermitrano/QueueingStudyInterface
+ * @since		QueueingStudyInterface v 0.0.1
  * @version		0.0.6
  * @package		app.Controller
  */
-class CarlDemoInterfaceController extends InterfaceController {
+class QueueingStudyInterfaceController extends InterfaceController {
 
 /**
  * The basic view action. All necessary variables are set in the main interface controller.
