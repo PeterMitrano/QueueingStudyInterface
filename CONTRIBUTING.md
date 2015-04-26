@@ -1,4 +1,4 @@
-CarlDemoInterface Build Setup
+QueueingStudyInterface Build Setup
 =============================
 
 [Phing](http://www.phing.info/) is used for documenting linting of PHP files.
@@ -21,7 +21,7 @@ Before proceeding, please confirm you have installed the dependencies above.
 
 To run the build tasks:
 
- 1. `cd /path/to/CarlDemoInterface/`
+ 1. `cd /path/to/QueueingStudyInterface/`
  2. `phing`
 
 `phing build` will run the linters. This is what [Travis CI](https://travis-ci.org/WPI-RAIL/rms) runs when a Pull Request is submitted.
