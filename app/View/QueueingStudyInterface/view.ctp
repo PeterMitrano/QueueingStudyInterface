@@ -32,17 +32,6 @@ echo $this->Rms->tf(
 );
 ?>
 
-<?php
-// URDF
-foreach ($environment['Urdf'] as $urdf) {
-	echo $this->Rms->urdf(
-		$urdf['param'],
-		$urdf['Collada']['id'],
-		$urdf['Resource']['url']
-	);
-}
-?>
-
 <section class='wrapper style4'>
 	<div class='content center'>
 		<section>
@@ -91,7 +80,16 @@ foreach ($environment['Urdf'] as $urdf) {
 			</div>
 			<div class='6u stream'>
 				<div id='mjpeg'>
-				</div>
+				</div><?php
+// URDF
+foreach ($environment['Urdf'] as $urdf) {
+	echo $this->Rms->urdf(
+		$urdf['param'],
+		$urdf['Collada']['id'],
+		$urdf['Resource']['url']
+	);
+}
+?>
 			</div>
 		</div>
 		<div class='row'>
@@ -118,6 +116,7 @@ foreach ($environment['Urdf'] as $urdf) {
 	</div>
 </section>
 
+
 <script>
 	_S = Math.min(((window.innerWidth / 2) - 120), window.innerHeight * 0.60);
 	new MJPEGCANVAS.MultiStreamViewer({
@@ -140,6 +139,17 @@ foreach ($environment['Urdf'] as $urdf) {
 		intensity: 0.660000
 	});
 </script>
+
+<?php
+// URDF
+foreach ($environment['Urdf'] as $urdf) {
+	echo $this->Rms->urdf(
+		$urdf['param'],
+		$urdf['Collada']['id'],
+		$urdf['Resource']['url']
+	);
+}
+?>
 
 <script>
 	var armClient = new ROSLIB.ActionClient({
