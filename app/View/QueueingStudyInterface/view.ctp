@@ -329,21 +329,39 @@ foreach ($environment['Urdf'] as $urdf) {
 		return undefined;
 	};
 
+	var safety_feedback = new ROSLIB.Topic({
+		ros: _ROS,
+		name: 'carl_safety/error',
+		messageType: 'carl_safety/Error'
+	});
+	safety_feedback.subscribe(function (message){
+		showFeedback(message.severity,message.resolved, message.message);
+	});
+
+	var nav_feedback = new ROSLIB.Topic({
+		ros: _ROS,
+		name: 'parking_markers/status',
+		messageType: 'carl_safety/Error'
+	});
+	nav_feedback.subscribe(function (message){
+		showFeedback(message.severity,message.resolved,message.message);
+	});
+
+	var pickup_feedback = new ROSLIB.Topic({
+		ros: _ROS,
+		name: '/carl_moveit_wrapper/common_actions/pickup/feedback',
+		messageType: 'carl_moveit/PickupActionFeedback'
+	});
+	pickup_feedback.subscribe(function(message){
+		showFeedback(0,false,message.feedback.message);
+	});
+
 	/**
 	 * display feedback to the user. Feedback has a string to display and a severity level (0-3).
 	 * 0 - debug. will be displayed under the interface in smaller test
 	 * 2 - error. will be overlayed on the interface
 	 * 3 - fatal. will be overlayed on the interface in red
 	 */
-	var feedback = new ROSLIB.Topic({
-		ros: _ROS,
-		name: 'carl_safety/error',
-		messageType: 'carl_safety/Error'
-	});
-
-	feedback.subscribe(function (message){
-		showFeedback(message.severity,message.resolved, message.message);
-	});
 
 	function showFeedback(severity,resolved,message) {
 		console.log(severity+" "+resolved+" "+message);
@@ -383,7 +401,7 @@ foreach ($environment['Urdf'] as $urdf) {
 	};
 
 	$('#clearFeedback').click(function () {
-		document.getElementById('feedback').innerHTML = 'awaiting feedback..';
+		document.getElementById('feedback').innerHTML = '';
 	});
 
 	/**
