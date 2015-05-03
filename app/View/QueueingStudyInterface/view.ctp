@@ -80,16 +80,7 @@ echo $this->Rms->tf(
 			</div>
 			<div class='6u stream'>
 				<div id='mjpeg'>
-				</div><?php
-// URDF
-foreach ($environment['Urdf'] as $urdf) {
-	echo $this->Rms->urdf(
-		$urdf['param'],
-		$urdf['Collada']['id'],
-		$urdf['Resource']['url']
-	);
-}
-?>
+				</div>
 			</div>
 		</div>
 		<div class='row'>
@@ -350,42 +341,46 @@ foreach ($environment['Urdf'] as $urdf) {
 		messageType: 'carl_safety/Error'
 	});
 
-	feedback.subscribe(function (message) {
-		console.log(message);
+	feedback.subscribe(function (message){
+		showFeedback(message.severity,message.resolved, message.message);
+	});
+
+	function showFeedback(severity,resolved,message) {
+		console.log(severity+" "+resolved+" "+message);
 		var feedback = document.getElementById('feedback');
 		var feedbackOverlay = document.getElementById('important_feedback');
 		var fatalFeedbackOverlay = document.getElementById('fatal_feedback');
 
-		switch (message.severity) {
+		switch (severity) {
 			case 2:
-				if (message.resolved) {
+				if (resolved) {
 					fatalFeedbackOverlay.className = 'feedback-overlay fatal hidden';
 					feedbackOverlay.className = 'feedback-overlay hidden';
 				}
 				else {
 					fatalFeedbackOverlay.className = 'feedback-overlay fatal';
-					fatalFeedbackOverlay.innerHTML = message.message;
+					fatalFeedbackOverlay.innerHTML = message;
 				}
 				break;
 
 			case 1:
-				if (message.resolved) {
+				if (resolved) {
 					feedbackOverlay.className = 'feedback-overlay hidden';
 				}
 				else {
 					feedbackOverlay.className = 'feedback-overlay';
-					feedbackOverlay.innerHTML = message.message;
+					feedbackOverlay.innerHTML = message;
 				}
 				break;
 
 			case 0:
-				feedback.innerHTML += message.message;
+				feedback.innerHTML += message;
 				feedback.innerHTML += '<br/><br/>';
 				//this will keep the div scrolled to the bottom
 				feedback.scrollTop = feedback.scrollHeight;
 		}
 
-	});
+	};
 
 	$('#clearFeedback').click(function () {
 		document.getElementById('feedback').innerHTML = 'awaiting feedback..';
@@ -460,6 +455,9 @@ foreach ($environment['Urdf'] as $urdf) {
 					action: 0
 				}
 			});
+			goal.on('feedback',function(message){
+				showFeedback(0,false,message.message);
+			});
 			goal.send();
 		});
 		$('#retract').click(function (e) {
@@ -470,6 +468,9 @@ foreach ($environment['Urdf'] as $urdf) {
 				goalMessage: {
 					action: 1
 				}
+			});
+			goal.on('feedback',function(message){
+				showFeedback(0,false,message.message);
 			});
 			goal.send();
 		});
