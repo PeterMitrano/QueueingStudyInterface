@@ -85,7 +85,7 @@ echo $this->Rms->tf(
 		</div>
 		<div class='row'>
 			<section class='4u'>
-				<a href='#' class='button fit' id='segment'>Segment</a>
+				<a href='#' class='button fit' id='segment'>Recognize Objects</a>
 				<br/>
 				<a href='#' class='button fit' id='ready'>Ready Arm</a>
 				<br/>
@@ -246,7 +246,7 @@ foreach ($environment['Urdf'] as $urdf) {
 	var enabled = false;
 	var rosQueue = new ROSQUEUE.Queue({
 		ros: _ROS,
-		studyTime: 10,
+		studyTime: 1,
 		userId: <?php
 			if (isset($appointment['Appointment']['user_id'])){
 				echo $appointment['Appointment']['user_id'];
@@ -277,6 +277,17 @@ foreach ($environment['Urdf'] as $urdf) {
 			//slight pause helps with loading the webpage
 			setTimeout(tutorial, 1000);
 		}
+	});
+
+	/**
+	 * update user wait time for active user
+	 */
+	rosQueue.on('enabled', function (message) {
+		console.log(message);
+		var d = new Date();
+		d.setSeconds(message.time_left.sec);
+		d.setMinutes(message.time_left.min);
+		$('#queueStatus').html('robot active, begin your control' + time_left);
 	});
 
 	/**
