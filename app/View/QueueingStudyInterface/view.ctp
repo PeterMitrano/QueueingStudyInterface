@@ -166,7 +166,9 @@ foreach ($environment['Urdf'] as $urdf) {
 	var keyboard_hl = $('#keyboard_highlight');
 
 	function tutorial(){
-		tutorial_hl.animate({opacity: 0.8},2000);
+		tutorial_hl.css("opacity","0.0");
+		tutorial_hl.css("display","block");
+		tutorial_hl.animate({opacity: 0.9},2000);
 		welcome_hl.fadeIn('slow');
 		$("#next").fadeIn('slow');
 	}
@@ -186,7 +188,7 @@ foreach ($environment['Urdf'] as $urdf) {
 
 	function feedback_tutorial() {
 		//move overlay down to cover lower text
-		$("#tutorial").css("height","31%");
+		$("#tutorial").css("height","35%");
 
 		buttons_hl.fadeOut('slow');
 		feedback_hl.fadeIn('slow');
@@ -246,7 +248,7 @@ foreach ($environment['Urdf'] as $urdf) {
 	var enabled = false;
 	var rosQueue = new ROSQUEUE.Queue({
 		ros: _ROS,
-		studyTime: 1,
+		studyTime: 2,
 		userId: <?php
 			if (isset($appointment['Appointment']['user_id'])){
 				echo $appointment['Appointment']['user_id'];
@@ -269,11 +271,9 @@ foreach ($environment['Urdf'] as $urdf) {
 		//begin the tutorial if the user hasn't visited before
 		var has_visited = <?php echo $has_visited?>;
 		if (has_visited){
-			console.log("has visited, no tutorial");
 			noTutorial();
 		}
 		else {
-			console.log("new visitor, show tutorial!");
 			//slight pause helps with loading the webpage
 			setTimeout(tutorial, 1000);
 		}
@@ -283,11 +283,10 @@ foreach ($environment['Urdf'] as $urdf) {
 	 * update user wait time for active user
 	 */
 	rosQueue.on('enabled', function (message) {
-		console.log(message);
 		var d = new Date();
-		d.setSeconds(message.time_left.sec);
-		d.setMinutes(message.time_left.min);
-		$('#queueStatus').html('robot active, begin your control' + time_left);
+		d.setSeconds(message.sec);
+		d.setMinutes(message.min);
+		$('#queueStatus').html('robot active!  Time Remaining ' + d.toLocaleTimeString().substring(3, 8));
 	});
 
 	/**
@@ -310,7 +309,7 @@ foreach ($environment['Urdf'] as $urdf) {
 		d.setSeconds(data.sec);
 		d.setMinutes(data.min);
 		//substring removes hours and AM/PM
-		document.getElementById('queueStatus').innerHTML = 'Your waiting time is ' + d.toLocaleTimeString().substring(2, 8);
+		document.getElementById('queueStatus').innerHTML = 'Your waiting time is ' + d.toLocaleTimeString().substring(3, 8);
 	});
 
 	/*
@@ -318,17 +317,18 @@ foreach ($environment['Urdf'] as $urdf) {
 	 * @param message Int32 message, the id of the user to remove
 	 */
 	rosQueue.on('disabled', function () {
+		console.log("ON DISABLE");
 		enabled = false;
 		document.getElementById('segment').className = 'button fit';
 		document.getElementById('ready').className = 'button fit';
 		document.getElementById('retract').className = 'button fit';
-
 	});
 
 	/**
-	 * whne the user is dequeued, force refresh the page. This will add them at the end of the queue and end all controls
+	 * whne the user is dequeued, send them back to their account
 	 */
 	rosQueue.on('dequeue', function () {
+		console.log("ON DEQUEUE");
 		location.reload();
 	});
 
@@ -351,7 +351,7 @@ foreach ($environment['Urdf'] as $urdf) {
 
 	var nav_feedback = new ROSLIB.Topic({
 		ros: _ROS,
-		name: 'parking_markers/status',
+		name: 'create_parking_spots/status',
 		messageType: 'carl_safety/Error'
 	});
 	nav_feedback.subscribe(function (message){
@@ -409,7 +409,7 @@ foreach ($environment['Urdf'] as $urdf) {
 				feedback.scrollTop = feedback.scrollHeight;
 		}
 
-	};
+	}
 
 	$('#clearFeedback').click(function () {
 		document.getElementById('feedback').innerHTML = '';
@@ -506,7 +506,7 @@ foreach ($environment['Urdf'] as $urdf) {
 	}
 
 	function addQueueStatus(){
-		$('#queueStatus').html('robot active, begin your control');
+		$('#queueStatus').html('robot active!');
 	}
 </script>
 

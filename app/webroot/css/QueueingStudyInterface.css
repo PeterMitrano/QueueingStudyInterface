@@ -92,13 +92,6 @@ html, body{
 	display: none;
 }
 
-.overlay {
-	opacity: 0.8;
-}
-
-.overlay.hidden {
-	opacity: 0.0;
-}
 
 .highlight {
 	display: none;
@@ -116,5 +109,5 @@ html, body{
 }
 
 #feedback_highlight {
-	top: 340px;
+	top: 400px;
 }
