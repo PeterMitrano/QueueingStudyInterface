@@ -248,7 +248,7 @@ foreach ($environment['Urdf'] as $urdf) {
 	var enabled = false;
 	var rosQueue = new ROSQUEUE.Queue({
 		ros: _ROS,
-		studyTime: 2,
+		studyTime: 10,
 		userId: <?php
 			if (isset($appointment['Appointment']['user_id'])){
 				echo $appointment['Appointment']['user_id'];
@@ -309,7 +309,7 @@ foreach ($environment['Urdf'] as $urdf) {
 		d.setSeconds(data.sec);
 		d.setMinutes(data.min);
 		//substring removes hours and AM/PM
-		document.getElementById('queueStatus').innerHTML = 'Your waiting time is ' + d.toLocaleTimeString().substring(3, 8);
+		$('#queueStatus').html('Your waiting time is ' + d.toLocaleTimeString().substring(3, 8));
 	});
 
 	/*
@@ -317,7 +317,6 @@ foreach ($environment['Urdf'] as $urdf) {
 	 * @param message Int32 message, the id of the user to remove
 	 */
 	rosQueue.on('disabled', function () {
-		console.log("ON DISABLE");
 		enabled = false;
 		document.getElementById('segment').className = 'button fit';
 		document.getElementById('ready').className = 'button fit';
@@ -328,7 +327,6 @@ foreach ($environment['Urdf'] as $urdf) {
 	 * whne the user is dequeued, send them back to their account
 	 */
 	rosQueue.on('dequeue', function () {
-		console.log("ON DEQUEUE");
 		location.reload();
 	});
 
@@ -375,7 +373,6 @@ foreach ($environment['Urdf'] as $urdf) {
 	 */
 
 	function showFeedback(severity,resolved,message) {
-		console.log(severity+" "+resolved+" "+message);
 		var feedback = document.getElementById('feedback');
 		var feedbackOverlay = document.getElementById('important_feedback');
 		var fatalFeedbackOverlay = document.getElementById('fatal_feedback');
@@ -470,13 +467,11 @@ foreach ($environment['Urdf'] as $urdf) {
 		//create the callbacks for the segment/ready/retract buttons
 		$('#segment').click(function (e) {
 			e.preventDefault();
-			console.log('segmenting');
 			var request = new ROSLIB.ServiceRequest({});
 			segmentClient.callService(request, function (result) {
 			});
 		});
 		$('#ready').click(function (e) {
-			console.log('readying...');
 			e.preventDefault();
 			var goal = new ROSLIB.Goal({
 				actionClient: armClient,
@@ -490,7 +485,6 @@ foreach ($environment['Urdf'] as $urdf) {
 			goal.send();
 		});
 		$('#retract').click(function (e) {
-			console.log('retracting...');
 			e.preventDefault();
 			var goal = new ROSLIB.Goal({
 				actionClient: armClient,
